@@ -207,16 +207,17 @@ COPY new_schema.budget (id, category, amount, spent, remaining, last_four) FROM 
 
 
 --
--- Data for Name: credit_card; Type: TABLE DATA; Schema: new_schema; Owner: postgres
+-- Data for Name: pmt_methods; Type: TABLE DATA; Schema: new_schema; Owner: postgres
 --
 
-COPY new_schema.credit_card (id, card_name, statement_balance, current_balance, monthly_balance, last_pmt_amount, last_pmt_date, closing_date, payment_date, valid_date, "card number") FROM stdin;
-5	PayPal 4139	0	0	0	0	\N	\N	\N	\N	\N
-2	B of A 4968	0	0	0	0	\N	2024-11-06	2024-11-05	\N	\N
-6	State Farm 1234	0	0	0	0	\N	\N	\N	\N	\N
-3	B of A 7660	0	0	503.67	0	\N	2024-10-28	2024-10-25	\N	\N
-4	Chase 8370	0	0	2032.0	0	\N	2024-09-24	2024-10-21	\N	\N
-1	B of A 4666	0	0	700.0	0	\N	2024-10-14	2024-11-11	\N	\N
+COPY new_schema.pmt_methods (id, card_name, statement_balance, current_balance, monthly_balance, last_pmt_amount, last_pmt_date, closing_date, payment_date, valid_date, "card number", "Type") FROM stdin;
+5	PayPal 4139	0	0	0	0	\N	\N	\N	\N	\N	CC
+2	B of A 4968	0	0	0	0	\N	2024-11-06	2024-11-05	\N	\N	CC
+6	State Farm 1234	0	0	0	0	\N	\N	\N	\N	\N	CC
+3	B of A 7660	0	0	503.67	0	\N	2024-10-28	2024-10-25	\N	\N	CC
+4	Chase 8370	0	0	2032.0	0	\N	2024-09-24	2024-10-21	\N	\N	CC
+1	B of A 4666	0	0	700.0	0	\N	2024-10-14	2024-11-11	\N	\N	CC
+7	B of A 2139	\N	\N	0	\N	\N	\N	\N	\N	\N	CK
 \.
 
 
@@ -357,7 +358,7 @@ SELECT pg_catalog.setval('new_schema.budget_id_seq', 15, true);
 -- Name: credit_card_id_seq; Type: SEQUENCE SET; Schema: new_schema; Owner: postgres
 --
 
-SELECT pg_catalog.setval('new_schema.credit_card_id_seq', 6, true);
+SELECT pg_catalog.setval('new_schema.credit_card_id_seq', 12, true);
 
 
 --

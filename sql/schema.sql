@@ -245,10 +245,10 @@ CREATE VIEW new_schema.budget_summary AS
 ALTER VIEW new_schema.budget_summary OWNER TO postgres;
 
 --
--- Name: credit_card; Type: TABLE; Schema: new_schema; Owner: postgres
+-- Name: pmt_methods; Type: TABLE; Schema: new_schema; Owner: postgres
 --
 
-CREATE TABLE new_schema.credit_card (
+CREATE TABLE new_schema.pmt_methods (
     id integer NOT NULL,
     card_name character varying,
     statement_balance numeric,
@@ -259,11 +259,12 @@ CREATE TABLE new_schema.credit_card (
     closing_date date,
     payment_date date,
     valid_date date,
-    "card number" character varying
+    "card number" character varying,
+    "Type" character varying
 );
 
 
-ALTER TABLE new_schema.credit_card OWNER TO postgres;
+ALTER TABLE new_schema.pmt_methods OWNER TO postgres;
 
 --
 -- Name: credit_card_id_seq; Type: SEQUENCE; Schema: new_schema; Owner: postgres
@@ -284,7 +285,7 @@ ALTER SEQUENCE new_schema.credit_card_id_seq OWNER TO postgres;
 -- Name: credit_card_id_seq; Type: SEQUENCE OWNED BY; Schema: new_schema; Owner: postgres
 --
 
-ALTER SEQUENCE new_schema.credit_card_id_seq OWNED BY new_schema.credit_card.id;
+ALTER SEQUENCE new_schema.credit_card_id_seq OWNED BY new_schema.pmt_methods.id;
 
 
 --
@@ -580,10 +581,10 @@ ALTER TABLE ONLY new_schema.budget ALTER COLUMN id SET DEFAULT nextval('new_sche
 
 
 --
--- Name: credit_card id; Type: DEFAULT; Schema: new_schema; Owner: postgres
+-- Name: pmt_methods id; Type: DEFAULT; Schema: new_schema; Owner: postgres
 --
 
-ALTER TABLE ONLY new_schema.credit_card ALTER COLUMN id SET DEFAULT nextval('new_schema.credit_card_id_seq'::regclass);
+ALTER TABLE ONLY new_schema.pmt_methods ALTER COLUMN id SET DEFAULT nextval('new_schema.credit_card_id_seq'::regclass);
 
 
 --
@@ -617,10 +618,10 @@ ALTER TABLE ONLY new_schema.budget
 
 
 --
--- Name: credit_card credit_card_pk; Type: CONSTRAINT; Schema: new_schema; Owner: postgres
+-- Name: pmt_methods credit_card_pk; Type: CONSTRAINT; Schema: new_schema; Owner: postgres
 --
 
-ALTER TABLE ONLY new_schema.credit_card
+ALTER TABLE ONLY new_schema.pmt_methods
     ADD CONSTRAINT credit_card_pk PRIMARY KEY (id);
 
 
