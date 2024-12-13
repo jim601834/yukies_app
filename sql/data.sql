@@ -20,7 +20,7 @@ SET row_security = off;
 -- Data for Name: accounts; Type: TABLE DATA; Schema: new_schema; Owner: postgres
 --
 
-COPY new_schema.accounts (acct_name, acct_type, acct_category, acct_balance, acct_link, acct_pmt_method, acct_id, acct_xtra1, acct_location, acct_distance, comments) FROM stdin;
+COPY new_schema.accounts (acct_name, acct_type, acct_category, acct_balance, acct_link, acct_pmt_method, acct_id, acct_subcategory, acct_location, acct_distance, comments) FROM stdin;
 Dana	Provider	Medical	0.00	AZ Oncology Wilmot	\N	11	\N	\N	\N	\N
 AZ Oncology Wilmot	Location	Medical	0.00	AZ Oncology	\N	13	\N	\N	\N	\N
 Gin	Provider	Medical	0.00	AZ Oncology St Joseph	\N	14	\N	\N	\N	\N
@@ -69,7 +69,6 @@ Chevron	Payee	Transportation	0.00	\N	\N	128	\N	\N	\N	\N
 Albertson's	Payee	Shopping	0.00	\N	\N	60	\N	\N	\N	\N
 SW Kidney	Payee	Medical	0.00	\N	\N	26	\N	\N	\N	\N
 Aqua Vita	Payee	Shopping	0.00	\N	\N	66	\N	\N	\N	\N
-SW Hand	Payee	Medical	0.00	\N	\N	28	\N	\N	\N	\N
 Urology Care	Payee	Medical	0.00	\N	\N	31	\N	\N	\N	\N
 Pima Heart	Payee	Medical	0.00	\N	\N	34	\N	\N	\N	\N
 AZ Hearing	Payee	Medical	0.00	\N	\N	42	\N	\N	\N	\N
@@ -174,7 +173,6 @@ Raging Sage	Payee	Eating Out	0.00	\N	Cash	69	\N	\N	\N	\N
 81	Payee	Eating Out	0.00	\N	\N	80	\N	\N	\N	\N
 Wildflower	Payee	Eating Out	0.00	\N	\N	85	\N	\N	\N	\N
 Starbucks	Payee	Eating Out	0.00	\N	\N	91	\N	\N	\N	\N
-Cash	Cassh	Cash	\N	\N	\N	28	\N	\N	\N	\N
 B of A Debit 0527	Debit	Payment Method	\N	B of  A 2139	\N	29	\N	\N	\N	\N
 Yamato	Payee	Eating Out	\N		\N	30	\N	\N	\N	\N
 Sher e Punjab	Payee	Eating out	\N	\N	\N	31	\N	\N	\N	\N
@@ -190,19 +188,39 @@ COPY new_schema.actions (id, entry_date, entry_time, "account-name", amount) FRO
 
 
 --
+-- Data for Name: automatic_transactions; Type: TABLE DATA; Schema: new_schema; Owner: postgres
+--
+
+COPY new_schema.automatic_transactions (id, transaction_name, day_of_month, amount, to_account, from_account, category) FROM stdin;
+\.
+
+
+--
 -- Data for Name: budget; Type: TABLE DATA; Schema: new_schema; Owner: postgres
 --
 
-COPY new_schema.budget (id, category, amount, spent, remaining, last_four) FROM stdin;
-8	Etc	$453.31	\N	\N	\N
-9	Contingency	$0.00	\N	\N	\N
-3	Utilities	$287.06	\N	\N	\N
-10	Insurance	$530.01	\N	\N	\N
-7	Transportation	$130.00	\N	\N	4666
-4	Medical	$0.00	\N	\N	4968
-15	Groceries	$500.00	\N	\N	4666
-2	Eating Out	$180.00	\N	\N	7760
-5	Network	$219.63	\N	\N	    
+COPY new_schema.budget (id, category, amount, spent, remaining, display) FROM stdin;
+16	Grocery1	200.00	\N	\N	N
+17	Grocery2	150.00	\N	\N	N
+18	Grocery3	150.00	\N	\N	N
+19	Drugs	0.00	\N	\N	N
+8	Etc	453.31	\N	\N	Y
+9	Contingency	0.00	\N	\N	Y
+3	Utilities	287.06	\N	\N	Y
+10	Insurance	530.01	\N	\N	Y
+7	Transportation	130.00	\N	\N	Y
+4	Medical	0.00	\N	\N	Y
+15	Groceries	500.00	\N	\N	Y
+2	Eating Out	180.00	\N	\N	Y
+5	Network	219.63	\N	\N	Y
+\.
+
+
+--
+-- Data for Name: persistent_state; Type: TABLE DATA; Schema: new_schema; Owner: postgres
+--
+
+COPY new_schema.persistent_state (id, state_key, state_value, last_updated) FROM stdin;
 \.
 
 
@@ -348,10 +366,17 @@ SELECT pg_catalog.setval('new_schema.actions_id_seq', 1, false);
 
 
 --
+-- Name: automatic_transactions_id_seq; Type: SEQUENCE SET; Schema: new_schema; Owner: postgres
+--
+
+SELECT pg_catalog.setval('new_schema.automatic_transactions_id_seq', 1, false);
+
+
+--
 -- Name: budget_id_seq; Type: SEQUENCE SET; Schema: new_schema; Owner: postgres
 --
 
-SELECT pg_catalog.setval('new_schema.budget_id_seq', 15, true);
+SELECT pg_catalog.setval('new_schema.budget_id_seq', 19, true);
 
 
 --
@@ -359,6 +384,13 @@ SELECT pg_catalog.setval('new_schema.budget_id_seq', 15, true);
 --
 
 SELECT pg_catalog.setval('new_schema.credit_card_id_seq', 12, true);
+
+
+--
+-- Name: persistent_state_id_seq; Type: SEQUENCE SET; Schema: new_schema; Owner: postgres
+--
+
+SELECT pg_catalog.setval('new_schema.persistent_state_id_seq', 1, false);
 
 
 --
