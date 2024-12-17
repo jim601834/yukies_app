@@ -2,6 +2,8 @@ import psycopg2
 from datetime import datetime, timedelta
 import json
 import os
+import calendar
+from sqlalchemy import create_engine, text
 
 class DBHandler:
     def __init__(self, config_path=None):
@@ -9,11 +11,12 @@ class DBHandler:
             config_path = os.path.join(os.path.dirname(__file__), '../config/config.json')
         with open(config_path, 'r') as f:
             self.config = json.load(f)
+        self.engine = create_engine(f"postgresql+psycopg2://{self.config['user']}:{self.config['password']}@{self.config['host']}:{self.config['port']}/{self.config['dbname']}")
         self.conn = None
 
     def connect(self):
         if self.conn is None or self.conn.closed:
-            self.conn = psycopg2.connect(**self.config)
+            self.conn = self.engine.connect()
 
     def close(self):
         if self.conn and not self.conn.closed:
@@ -22,11 +25,10 @@ class DBHandler:
     def get_view_data(self, schema_name, view_name, column_name):
         self.connect()
         try:
-            with self.conn.cursor() as cursor:
-                cursor.execute(f"SELECT {column_name} FROM {schema_name}.{view_name}")
-                rows = cursor.fetchall()
-                return [row[0] for row in rows]
-        except psycopg2.Error as e:
+            result = self.conn.execute(text(f"SELECT {column_name} FROM {schema_name}.{view_name}"))
+            rows = result.fetchall()
+            return [row[0] for row in rows]
+        except Exception as e:
             print(f"Error fetching data from view {schema_name}.{view_name}: {e}")
             return []
         finally:
@@ -35,11 +37,10 @@ class DBHandler:
     def get_table_data(self, schema_name, table_name, column_name):
         self.connect()
         try:
-            with self.conn.cursor() as cursor:
-                cursor.execute(f"SELECT {column_name} FROM {schema_name}.{table_name}")
-                rows = cursor.fetchall()
-                return [row[0] for row in rows]
-        except psycopg2.Error as e:
+            result = self.conn.execute(text(f"SELECT {column_name} FROM {schema_name}.{table_name}"))
+            rows = result.fetchall()
+            return [row[0] for row in rows]
+        except Exception as e:
             print(f"Error fetching data from table {schema_name}.{table_name}: {e}")
             return []
         finally:
@@ -48,12 +49,11 @@ class DBHandler:
     def list_views(self):
         self.connect()
         try:
-            with self.conn.cursor() as cursor:
-                cursor.execute("SELECT table_schema, table_name FROM information_schema.views WHERE table_schema NOT IN ('information_schema', 'pg_catalog')")
-                views = cursor.fetchall()
-                for view in views:
-                    print(f"View: {view[0]}.{view[1]}")
-        except psycopg2.Error as e:
+            result = self.conn.execute(text("SELECT table_schema, table_name FROM information_schema.views WHERE table_schema NOT IN ('information_schema', 'pg_catalog')"))
+            views = result.fetchall()
+            for view in views:
+                print(f"View: {view[0]}.{view[1]}")
+        except Exception as e:
             print(f"Error listing views: {e}")
         finally:
             self.close()
@@ -126,23 +126,22 @@ class DBHandler:
         """
         self.connect()
         try:
-            with self.conn.cursor() as cursor:
-                cursor.execute("SELECT * FROM automatic_transactions")
-                rows = cursor.fetchall()
-                transactions = []
-                for row in rows:
-                    transaction = {
-                        'id': row[0],
-                        'transaction_name': row[1],
-                        'service_date': self.translate_service_date(row[2], year, month),
-                        'amount': row[3],
-                        'to_account': row[4],
-                        'from_account': row[5],
-                        'category': row[6]
-                    }
-                    transactions.append(transaction)
-                return transactions
-        except psycopg2.Error as e:
+            result = self.conn.execute(text("SELECT * FROM new_schema.automatic_transactions"))
+            rows = result.fetchall()
+            transactions = []
+            for row in rows:
+                transaction = {
+                    'id': row[0],
+                    'transaction_name': row[1],
+                    'service_date': self.translate_service_date(row[2], year, month),
+                    'amount': row[3],
+                    'to_account': row[4],
+                    'from_account': row[5],
+                    'category': row[6]
+                }
+                transactions.append(transaction)
+            return transactions
+        except Exception as e:
             print(f"Error fetching automatic transactions: {e}")
             return []
         finally:
@@ -156,11 +155,10 @@ class DBHandler:
         """
         self.connect()
         try:
-            with self.conn.cursor() as cursor:
-                cursor.execute("SELECT state_value FROM persistent_state WHERE state_key = %s", (state_key,))
-                result = cursor.fetchone()
-                return result is not None and result[0] == 'true'
-        except psycopg2.Error as e:
+            result = self.conn.execute(text("SELECT state_value FROM new_schema.persistent_state WHERE state_key = :state_key"), {'state_key': state_key})
+            result = result.fetchone()
+            return result is not None and result[0] == 'true'
+        except Exception as e:
             print(f"Error checking persistent state: {e}")
             return False
         finally:
@@ -174,15 +172,14 @@ class DBHandler:
         """
         self.connect()
         try:
-            with self.conn.cursor() as cursor:
-                cursor.execute("""
-                    INSERT INTO persistent_state (state_key, state_value, last_updated)
-                    VALUES (%s, %s, CURRENT_TIMESTAMP)
-                    ON CONFLICT (state_key) DO UPDATE
-                    SET state_value = EXCLUDED.state_value, last_updated = EXCLUDED.last_updated
-                """, (state_key, state_value))
-                self.conn.commit()
-        except psycopg2.Error as e:
+            self.conn.execute(text("""
+                INSERT INTO new_schema.persistent_state (state_key, state_value, last_updated)
+                VALUES (:state_key, :state_value, CURRENT_TIMESTAMP)
+                ON CONFLICT (state_key) DO UPDATE
+                SET state_value = EXCLUDED.state_value, last_updated = EXCLUDED.last_updated
+            """), {'state_key': state_key, 'state_value': state_value})
+            self.conn.commit()
+        except Exception as e:
             print(f"Error updating persistent state: {e}")
         finally:
             self.close()
@@ -206,19 +203,99 @@ class DBHandler:
         transactions = self.fetch_automatic_transactions(year, month)
         self.connect()
         try:
-            with self.conn.cursor() as cursor:
-                for transaction in transactions:
-                    cursor.execute("""
-                        INSERT INTO qlog (entry_date, entry_time, service_date, category, to_account, amount, from_account, status, comment, image, exec_time, deduction, t_code, distance)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    """, (
-                        datetime.now().date(), datetime.now().time(), transaction['service_date'], transaction['category'],
-                        transaction['to_account'], transaction['amount'], transaction['from_account'], 'Pending', '',
-                        None, datetime.now(), False, 'AUTO', None
-                    ))
-                self.conn.commit()
-                self.update_persistent_state(state_key, 'true')
-        except psycopg2.Error as e:
+            for transaction in transactions:
+                self.conn.execute(text("""
+                    INSERT INTO new_schema.qlog (entry_date, entry_time, service_date, category, to_account, amount, from_account, status, comment, image, exec_time, deduction, t_code, distance)
+                    VALUES (:entry_date, :entry_time, :service_date, :category, :to_account, :amount, :from_account, :status, :comment, :image, :exec_time, :deduction, :t_code, :distance)
+                """), {
+                    'entry_date': datetime.now().date(), 'entry_time': datetime.now().time(), 'service_date': transaction['service_date'], 'category': transaction['category'],
+                    'to_account': transaction['to_account'], 'amount': transaction['amount'], 'from_account': transaction['from_account'], 'status': 'Pending', 'comment': '',
+                    'image': None, 'exec_time': datetime.now(), 'deduction': False, 't_code': 'AUTO', 'distance': None
+                })
+            self.conn.commit()
+            self.update_persistent_state(state_key, 'true')
+        except Exception as e:
             print(f"Error appending automatic transactions to qlog: {e}")
+        finally:
+            self.close()
+
+    def fetch_account_details(self, account_name):
+        """
+        Fetch account details for a given account name.
+        :param account_name: str
+        :return: tuple
+        """
+        self.connect()
+        try:
+            result = self.conn.execute(text("""
+                SELECT acct_category, comments, acct_type, acct_subcategory, deduction
+                FROM new_schema.accounts
+                WHERE acct_name = :account_name
+            """), {'account_name': account_name})
+            result = result.fetchone()
+            return result
+        except Exception as e:
+            print(f"Error fetching account details: {e}")
+            return None
+        finally:
+            self.close()
+
+    def fetch_top_level_category(self, category):
+        """
+        Fetch the top-level category for a given category.
+        :param category: str
+        :return: str
+        """
+        self.connect()
+        try:
+            result = self.conn.execute(text("""
+                SELECT top_level_name
+                FROM top_level_view
+                WHERE category = :category
+            """), {'category': category})
+            result = result.fetchone()
+            return result[0] if result else category
+        except Exception as e:
+            print(f"Error fetching top-level category: {e}")
+            return category
+        finally:
+            self.close()
+
+    def insert_transaction(self, transaction):
+        """
+        Insert a transaction into the qlog table.
+        :param transaction: dict
+        """
+        self.connect()
+        try:
+            self.conn.execute(text("""
+                INSERT INTO new_schema.qlog (entry_date, entry_time, service_date, category, to_account, amount, from_account, status, comment, image, exec_time, deduction, t_code, distance, type, subcategory)
+                VALUES (:entry_date, :entry_time, :service_date, :category, :to_account, :amount, :from_account, :status, :comment, :image, :exec_time, :deduction, :t_code, :distance, :type, :subcategory)
+            """), transaction)
+            self.conn.commit()
+        except Exception as e:
+            print(f"Error inserting transaction: {e}")
+        finally:
+            self.close()
+
+    def check_and_set_flag(self):
+        """
+        Check if the auto transactions have been processed for the current month and set the flag if not.
+        :return: bool
+        """
+        current_month = datetime.now().strftime('%Y-%m')
+        query_check = "SELECT state_value FROM new_schema.persistent_state WHERE state_key = 'auto_transactions_processed' AND state_value = :current_month"
+        query_set = "INSERT INTO new_schema.persistent_state (state_key, state_value) VALUES ('auto_transactions_processed', :current_month) ON CONFLICT (state_key) DO UPDATE SET state_value = EXCLUDED.state_value"
+        self.connect()
+        try:
+            result = self.conn.execute(text(query_check), {'current_month': current_month}).fetchone()
+            if result:
+                return False
+            self.conn.execute(text(query_set), {'current_month': current_month})
+            self.conn.commit()
+            return True
+        except Exception as e:
+            print(f"Error checking and setting flag: {e}")
+            return False
         finally:
             self.close()
