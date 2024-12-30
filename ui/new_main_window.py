@@ -1,42 +1,18 @@
 from PySide6.QtWidgets import QMainWindow, QApplication, QVBoxLayout, QGridLayout, QScrollArea, QWidget
 from logic.notifications import send_error_notification
-from logic.scheduler import start_scheduler  # Ensure this is the correct scheduler module
 from logic.combo_box_logic import ComboBoxLogic
-from logic.db_handler import DBHandler
-from ui.budget_area import BudgetArea
-from ui.transaction_detail_area import TransactionDetailArea
-from ui.payment_methods_area import PaymentMethodsArea
-from ui.date_range_buttons_area import DateRangeButtonsArea
+from database.db_handler import DBHandler
+from ui.areas.budget_area import BudgetArea
+from ui.areas.transaction_detail_area import TransactionDetailArea
+from ui.areas.payment_methods_area import PaymentMethodsArea
+from ui.areas.date_range_buttons_area import DateRangeButtonsArea
 from ui.data_entry_widget import DataEntryWidget
-import threading
 import pandas as pd
 from PySide6.QtCore import QDateTime
 
 class NewMainWindow(QMainWindow):
     def __init__(self):
         super(NewMainWindow, self).__init__()
-
-        # Initialize ComboBoxLogic
-        db_config = {
-            'dbname': 'yukies_db',
-            'user': 'postgres',
-            'password': 'sasuke',
-            'host': '127.0.0.1',
-            'port': '5433'
-        }
-        self.db_handler = DBHandler(db_config)
-        self.combo_box_logic = ComboBoxLogic(self, self.db_handler)
-
-        # Start the scheduler in a separate thread
-        scheduler_thread = threading.Thread(target=start_scheduler)
-        scheduler_thread.daemon = True
-        scheduler_thread.start()
-
-        # Variable to store the title of the button pressed
-        self.t_code_holder = None
-
-        # Variable to store the currently displayed category in the transaction detail view
-        self.current_category = None
 
         # Create the central widget
         central_widget = QWidget()
@@ -49,8 +25,22 @@ class NewMainWindow(QMainWindow):
         self.data_entry_widget = DataEntryWidget()
         main_layout.addWidget(self.data_entry_widget)
 
-        # Set height for data entry area
-        self.data_entry_widget.setFixedHeight(200)  # Adjust height to make it appropriate
+        # Initialize ComboBoxLogic after data_entry_widget is set
+        db_config = {
+            'dbname': 'yukies_db',
+            'user': 'postgres',
+            'password': 'sasuke',
+            'host': '127.0.0.1',
+            'port': '5433'
+        }
+        self.db_handler = DBHandler(db_config)
+        self.combo_box_logic = ComboBoxLogic(self, self.db_handler)
+
+        # Variable to store the title of the button pressed
+        self.t_code_holder = None
+
+        # Variable to store the currently displayed category in the transaction detail view
+        self.current_category = None
 
         # Add buttons for Withdraw, Pay, Deposit, and Transfer at the top
         self.withdraw_button = self.data_entry_widget.withdraw_button
@@ -65,7 +55,7 @@ class NewMainWindow(QMainWindow):
         self.transfer_button.clicked.connect(self.button_clicked)
 
         # Connect the pay_to combo box to the method that checks the category
-        self.data_entry_widget.combo_box2.currentIndexChanged.connect(self.check_category)
+        self.data_entry_widget.combo_box_to.currentIndexChanged.connect(self.check_category)
 
         # Scrollable areas in a 2x2 grid
         self.grid_layout = QGridLayout()
@@ -97,7 +87,7 @@ class NewMainWindow(QMainWindow):
 
     def check_category(self):
         try:
-            to_account = self.data_entry_widget.combo_box2.currentText()
+            to_account = self.data_entry_widget.combo_box_to.currentText()
             if not to_account:
                 return
 
@@ -120,10 +110,10 @@ class NewMainWindow(QMainWindow):
             entry_time = current_datetime.time().toString("HH:mm:ss")
 
             # Capture user inputs
-            service_date = self.data_entry_widget.date_combo_box.currentText()
+            service_date = self.data_entry_widget.date_list_box.date().toString("yyyy-MM-dd")
             amount = self.data_entry_widget.amount_input.text()
-            from_account = self.data_entry_widget.combo_box3.currentText()
-            comment = self.data_entry_widget.comment_input.text()
+            from_account = self.data_entry_widget.combo_box_from.currentText()
+            comment = self.data_entry_widget.comment_box.text()
             deduction = 'true' if self.data_entry_widget.tax_checkbox.isChecked() else 'false'
 
             # Use the t_code_holder set by the button click
@@ -133,7 +123,7 @@ class NewMainWindow(QMainWindow):
             print(f"t_code stored in t_code: {t_code}")
 
             # Get the to_account and category from the database
-            to_account = self.data_entry_widget.combo_box2.currentText()
+            to_account = self.data_entry_widget.combo_box_to.currentText()
             query = "SELECT top_level_name FROM new_schema.top_level_view WHERE acct_name = %s"
             result = self.db_handler.fetch_one(query, (to_account,))
             if result:
@@ -176,12 +166,12 @@ class NewMainWindow(QMainWindow):
             ))
 
             # Reset all data entry fields to their original state
-            self.data_entry_widget.date_combo_box.setCurrentIndex(0)
+            self.data_entry_widget.date_list_box.setDate(QDate.currentDate())
             self.data_entry_widget.amount_input.clear()
-            self.data_entry_widget.combo_box3.setCurrentIndex(0)
-            self.data_entry_widget.comment_input.clear()
+            self.data_entry_widget.combo_box_from.setCurrentIndex(0)
+            self.data_entry_widget.comment_box.clear()
             self.data_entry_widget.tax_checkbox.setChecked(False)
-            self.data_entry_widget.combo_box2.setCurrentIndex(0)
+            self.data_entry_widget.combo_box_to.setCurrentIndex(0)
 
             # Reload the budget table to update the values
             self.budget_area.load_data()

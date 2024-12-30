@@ -5,7 +5,7 @@ from email.mime.multipart import MIMEMultipart
 SMTP_SERVER = 'smtp.gmail.com'
 SMTP_PORT = 587
 SENDER_EMAIL = 'jim.601834@gmail.com'
-SENDER_PASSWORD = 'diie byqr knav hqtg'  # Use your Gmail password
+SENDER_PASSWORD = 'diie byqr knav hqtg'  # Use your Gmail app-specific password
 RECIPIENT_EMAIL = 'jimandrada1940@gmail.com'
 RECIPIENT_PHONE = '5203015469@vtext.com'  # Verizon email-to-SMS gateway
 
@@ -29,10 +29,3 @@ def send_error_notification(error_message):
         print("Error notification sent successfully.")
     except Exception as e:
         print(f"Failed to send error notification: {e}")
-
-def simulate_error():
-    error_message = "Dummy error message for testing purposes."
-    send_error_notification(error_message)
-
-# Example usage
-simulate_error()

@@ -1,0 +1,16 @@
+yukies_app/
+    database/
+        db_handler.py
+    logic/
+        combo_box_logic.py
+        notifications.py
+    ui/
+        areas/
+            budget_area.py
+            transaction_detail_area.py
+            payment_methods_area.py
+            date_range_buttons_area.py
+        data_entry_widget.py
+        new_main_window.py
+        sign_in_window.py
+    main.py
