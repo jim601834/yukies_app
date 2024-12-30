@@ -46,9 +46,19 @@ class DataEntryWidget(QWidget):
         self.date_list_box.setFixedWidth(110)  # Adjust width to be a couple of characters wider
         data_entry_layout.addWidget(self.date_list_box)
 
-        # Combo boxes
+        # Combo boxes with placeholder text
         self.combo_box_to = QComboBox()
         self.combo_box_from = QComboBox()
+        self.combo_box_to.addItem("Enter To Account")
+        self.combo_box_from.addItem("Enter From Account")
+        self.combo_box_to.setEditable(True)
+        self.combo_box_from.setEditable(True)
+        self.combo_box_to.lineEdit().setReadOnly(True)
+        self.combo_box_from.lineEdit().setReadOnly(True)
+        self.combo_box_to.lineEdit().setStyleSheet("color: gray")
+        self.combo_box_from.lineEdit().setStyleSheet("color: gray")
+        self.combo_box_to.setEnabled(False)
+        self.combo_box_from.setEnabled(False)
         self.combo_box_to.setFixedWidth(170)  # Adjust width to be 5 characters wider
         self.combo_box_from.setFixedWidth(170)  # Adjust width to be 5 characters wider
         data_entry_layout.addWidget(self.combo_box_to)
@@ -94,3 +104,23 @@ class DataEntryWidget(QWidget):
 
         # Add data entry layout to the main layout
         main_layout.addLayout(data_entry_layout)
+
+    def set_combo_box_placeholders(self):
+        self.combo_box_to.clear()
+        self.combo_box_from.clear()
+        self.combo_box_to.addItem("Enter To Account")
+        self.combo_box_from.addItem("Enter From Account")
+        self.combo_box_to.lineEdit().setReadOnly(True)
+        self.combo_box_from.lineEdit().setReadOnly(True)
+        self.combo_box_to.lineEdit().setStyleSheet("color: gray")
+        self.combo_box_from.lineEdit().setStyleSheet("color: gray")
+        self.combo_box_to.setEnabled(False)
+        self.combo_box_from.setEnabled(False)
+
+    def enable_combo_boxes(self):
+        self.combo_box_to.setEnabled(True)
+        self.combo_box_from.setEnabled(True)
+        self.combo_box_to.lineEdit().setReadOnly(False)
+        self.combo_box_from.lineEdit().setReadOnly(False)
+        self.combo_box_to.lineEdit().setStyleSheet("color: black")
+        self.combo_box_from.lineEdit().setStyleSheet("color: black")

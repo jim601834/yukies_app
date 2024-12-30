@@ -1,40 +1,47 @@
 import psycopg2
-from datetime import datetime, timedelta
 
 class DBHandler:
     def __init__(self, config):
         self.config = config
-        self.conn = None
-        self.connect()
+        self.connection = None
 
     def connect(self):
-        if self.conn is None or self.conn.closed:
-            self.conn = psycopg2.connect(**self.config)
-
-    def close(self):
-        if self.conn and not self.conn.closed:
-            self.conn.close()
-
-    def execute_query(self, query, params=None):
-        self.connect()
-        with self.conn.cursor() as cursor:
-            cursor.execute(query, params)
-            self.conn.commit()
+        if self.connection is None:
+            self.connection = psycopg2.connect(**self.config)
 
     def fetch_all(self, query, params=None):
         self.connect()
-        with self.conn.cursor() as cursor:
+        with self.connection.cursor() as cursor:
             cursor.execute(query, params)
-            results = cursor.fetchall()
-        return results
+            return cursor.fetchall()
 
     def fetch_one(self, query, params=None):
         self.connect()
-        with self.conn.cursor() as cursor:
+        with self.connection.cursor() as cursor:
             cursor.execute(query, params)
-            result = cursor.fetchone()
-        return result
+            return cursor.fetchone()
 
-    def get_view_data(self, schema_name, view_name, column_name):
-        query = f"SELECT {column_name} FROM {schema_name}.{view_name}"
-        return [row[0] for row in self.fetch_all(query)]
+    def execute_query(self, query, params=None):
+        self.connect()
+        with self.connection.cursor() as cursor:
+            cursor.execute(query, params)
+            self.connection.commit()
+
+    def begin_transaction(self):
+        self.connect()
+        self.connection.autocommit = False
+
+    def commit_transaction(self):
+        if self.connection:
+            self.connection.commit()
+            self.connection.autocommit = True
+
+    def rollback_transaction(self):
+        if self.connection:
+            self.connection.rollback()
+            self.connection.autocommit = True
+
+    def close(self):
+        if self.connection:
+            self.connection.close()
+            self.connection = None

@@ -1,12 +1,9 @@
 from PySide6.QtWidgets import QMainWindow, QApplication, QVBoxLayout, QGridLayout, QScrollArea, QWidget
 from logic.notifications import send_error_notification
-from logic.combo_box_logic import ComboBoxLogic
-from database.db_handler import DBHandler
-from ui.areas.budget_area import BudgetArea
-from ui.areas.transaction_detail_area import TransactionDetailArea
-from ui.areas.payment_methods_area import PaymentMethodsArea
-from ui.areas.date_range_buttons_area import DateRangeButtonsArea
 from ui.data_entry_widget import DataEntryWidget
+from logic.app_initializer import AppInitializer
+from logic.transaction_handler import TransactionHandler
+from logic.data_entry_handler import DataEntryHandler
 import pandas as pd
 from PySide6.QtCore import QDateTime
 
@@ -25,7 +22,17 @@ class NewMainWindow(QMainWindow):
         self.data_entry_widget = DataEntryWidget()
         main_layout.addWidget(self.data_entry_widget)
 
-        # Initialize ComboBoxLogic after data_entry_widget is set
+        # Variable to store the title of the button pressed
+        self.t_code_holder = None
+
+        # Variable to store the currently displayed category in the transaction detail view
+        self.current_category = None
+
+        # Create the grid layout for scrollable areas
+        self.grid_layout = QGridLayout()
+        main_layout.addLayout(self.grid_layout)
+
+        # Initialize the application
         db_config = {
             'dbname': 'yukies_db',
             'user': 'postgres',
@@ -33,46 +40,30 @@ class NewMainWindow(QMainWindow):
             'host': '127.0.0.1',
             'port': '5433'
         }
-        self.db_handler = DBHandler(db_config)
-        self.combo_box_logic = ComboBoxLogic(self, self.db_handler)
+        self.app_initializer = AppInitializer(self, db_config)
+        self.app_initializer.initialize()
 
-        # Variable to store the title of the button pressed
-        self.t_code_holder = None
+        # Initialize the transaction handler
+        self.transaction_handler = TransactionHandler(self.app_initializer.db_handler)
 
-        # Variable to store the currently displayed category in the transaction detail view
-        self.current_category = None
-
-        # Add buttons for Withdraw, Pay, Deposit, and Transfer at the top
-        self.withdraw_button = self.data_entry_widget.withdraw_button
-        self.pay_button = self.data_entry_widget.pay_button
-        self.deposit_button = self.data_entry_widget.deposit_button
-        self.transfer_button = self.data_entry_widget.transfer_button
-
-        # Connect buttons to the button_clicked method
-        self.withdraw_button.clicked.connect(self.button_clicked)
-        self.pay_button.clicked.connect(self.button_clicked)
-        self.deposit_button.clicked.connect(self.button_clicked)
-        self.transfer_button.clicked.connect(self.button_clicked)
-
-        # Connect the pay_to combo box to the method that checks the category
-        self.data_entry_widget.combo_box_to.currentIndexChanged.connect(self.check_category)
-
-        # Scrollable areas in a 2x2 grid
-        self.grid_layout = QGridLayout()
-        self.budget_area = BudgetArea(self.db_handler)
-        self.transaction_detail_area = TransactionDetailArea(self.db_handler)
-        self.payment_methods_area = PaymentMethodsArea(self.db_handler)
-        self.date_range_buttons_area = DateRangeButtonsArea(self.transaction_detail_area)
-
-        self.add_scroll_area(self.budget_area, 0, 0)
-        self.add_scroll_area(self.transaction_detail_area, 0, 1)
-        self.add_scroll_area(self.payment_methods_area, 1, 0)
-        self.add_scroll_area(self.date_range_buttons_area, 1, 1)
-
-        main_layout.addLayout(self.grid_layout)
+        # Initialize the data entry handler
+        self.data_entry_handler = DataEntryHandler(self.app_initializer.db_handler)
 
         # Maximize the window
         self.showMaximized()
+
+        # Connect the submit button to the submit method
+        self.data_entry_widget.submit_button.clicked.connect(self.on_submit_button_clicked)
+
+        # Connect the function buttons to the button_clicked method
+        self.data_entry_widget.maintain_button.clicked.connect(self.button_clicked)
+        self.data_entry_widget.withdraw_button.clicked.connect(self.button_clicked)
+        self.data_entry_widget.deposit_button.clicked.connect(self.button_clicked)
+        self.data_entry_widget.transfer_button.clicked.connect(self.button_clicked)
+        self.data_entry_widget.pay_button.clicked.connect(self.button_clicked)
+
+        # Set initial combo box placeholders
+        self.data_entry_widget.set_combo_box_placeholders()
 
     def add_scroll_area(self, widget, row, col):
         scroll_area = QScrollArea()
@@ -85,6 +76,113 @@ class NewMainWindow(QMainWindow):
         self.t_code_holder = self.sender().text()
         print(f"{self.t_code_holder} button clicked")
 
+        # Update combo boxes based on the button clicked
+        if self.t_code_holder == "Pay":
+            self.load_pay_combo_boxes()
+        elif self.t_code_holder == "Transfer":
+            self.load_transfer_combo_boxes()
+        elif self.t_code_holder == "Deposit":
+            self.load_deposit_combo_boxes()
+        elif self.t_code_holder == "Withdraw":
+            self.load_withdraw_combo_boxes()
+        else:
+            self.data_entry_widget.set_combo_box_placeholders()
+            self.data_entry_widget.enable_combo_boxes()
+
+    def load_pay_combo_boxes(self):
+        try:
+            pay_to_accounts, pay_from_accounts = self.data_entry_handler.load_pay_combo_boxes()
+
+            # Load the "To" combo box
+            self.data_entry_widget.combo_box_to.clear()
+            self.data_entry_widget.combo_box_to.addItem("Enter To Account")
+            self.data_entry_widget.combo_box_to.lineEdit().setStyleSheet("color: gray")
+            for account in pay_to_accounts:
+                self.data_entry_widget.combo_box_to.addItem(account[0])
+
+            # Load the "From" combo box
+            self.data_entry_widget.combo_box_from.clear()
+            self.data_entry_widget.combo_box_from.addItem("Enter From Account")
+            self.data_entry_widget.combo_box_from.lineEdit().setStyleSheet("color: gray")
+            for account in pay_from_accounts:
+                self.data_entry_widget.combo_box_from.addItem(account[0])
+
+            # Enable combo boxes for user input
+            self.data_entry_widget.enable_combo_boxes()
+
+        except Exception as e:
+            self.show_error_message(f"An error occurred while loading combo boxes: {e}")
+
+    def load_transfer_combo_boxes(self):
+        try:
+            transfer_to_accounts, transfer_from_accounts = self.data_entry_handler.load_transfer_combo_boxes()
+
+            # Load the "To" combo box
+            self.data_entry_widget.combo_box_to.clear()
+            self.data_entry_widget.combo_box_to.addItem("Enter To Account")
+            self.data_entry_widget.combo_box_to.lineEdit().setStyleSheet("color: gray")
+            for account in transfer_to_accounts:
+                self.data_entry_widget.combo_box_to.addItem(account[0])
+
+            # Load the "From" combo box
+            self.data_entry_widget.combo_box_from.clear()
+            self.data_entry_widget.combo_box_from.addItem("Enter From Account")
+            self.data_entry_widget.combo_box_from.lineEdit().setStyleSheet("color: gray")
+            for account in transfer_from_accounts:
+                self.data_entry_widget.combo_box_from.addItem(account[0])
+
+            # Enable combo boxes for user input
+            self.data_entry_widget.enable_combo_boxes()
+
+        except Exception as e:
+            self.show_error_message(f"An error occurred while loading combo boxes: {e}")
+
+    def load_deposit_combo_boxes(self):
+        try:
+            deposit_to_accounts, deposit_from_accounts = self.data_entry_handler.load_deposit_combo_boxes()
+
+            # Load the "To" combo box
+            self.data_entry_widget.combo_box_to.clear()
+            self.data_entry_widget.combo_box_to.addItem("Enter To Account")
+            self.data_entry_widget.combo_box_to.lineEdit().setStyleSheet("color: gray")
+            for account in deposit_to_accounts:
+                self.data_entry_widget.combo_box_to.addItem(account[0])
+
+            # Load the "From" combo box
+            self.data_entry_widget.combo_box_from.clear()
+            self.data_entry_widget.combo_box_from.addItem("Enter From Account")
+            self.data_entry_widget.combo_box_from.lineEdit().setStyleSheet("color: gray")
+            for account in deposit_from_accounts:
+                self.data_entry_widget.combo_box_from.addItem(account[0])
+
+            # Enable combo boxes for user input
+            self.data_entry_widget.enable_combo_boxes()
+
+        except Exception as e:
+            self.show_error_message(f"An error occurred while loading combo boxes: {e}")
+
+    def load_withdraw_combo_boxes(self):
+        try:
+            withdraw_from_accounts = self.data_entry_handler.load_withdraw_combo_boxes()
+
+            # Load the "From" combo box
+            self.data_entry_widget.combo_box_from.clear()
+            self.data_entry_widget.combo_box_from.addItem("Enter From Account")
+            self.data_entry_widget.combo_box_from.lineEdit().setStyleSheet("color: gray")
+            for account in withdraw_from_accounts:
+                self.data_entry_widget.combo_box_from.addItem(account[0])
+
+            # Set "Cash" in the "To" combo box
+            self.data_entry_widget.combo_box_to.clear()
+            self.data_entry_widget.combo_box_to.addItem("Cash")
+            self.data_entry_widget.combo_box_to.lineEdit().setStyleSheet("color: black")
+
+            # Enable combo boxes for user input
+            self.data_entry_widget.enable_combo_boxes()
+
+        except Exception as e:
+            self.show_error_message(f"An error occurred while loading combo boxes: {e}")
+
     def check_category(self):
         try:
             to_account = self.data_entry_widget.combo_box_to.currentText()
@@ -92,7 +190,7 @@ class NewMainWindow(QMainWindow):
                 return
 
             query = "SELECT acct_category FROM new_schema.top_level_view WHERE acct_name = %s"
-            result = self.db_handler.fetch_one(query, (to_account,))
+            result = self.app_initializer.db_handler.fetch_one(query, (to_account,))
             if result:
                 acct_category = result[0]
                 if acct_category in ["Medical", "Government"]:
@@ -125,7 +223,7 @@ class NewMainWindow(QMainWindow):
             # Get the to_account and category from the database
             to_account = self.data_entry_widget.combo_box_to.currentText()
             query = "SELECT top_level_name FROM new_schema.top_level_view WHERE acct_name = %s"
-            result = self.db_handler.fetch_one(query, (to_account,))
+            result = self.app_initializer.db_handler.fetch_one(query, (to_account,))
             if result:
                 top_level_name = result[0]
                 to_account = top_level_name
@@ -133,7 +231,7 @@ class NewMainWindow(QMainWindow):
                 raise ValueError("No matching top_level_name found for the given to_account")
 
             query = "SELECT acct_distance, acct_category FROM new_schema.accounts WHERE acct_name = %s"
-            result = self.db_handler.fetch_one(query, (to_account,))
+            result = self.app_initializer.db_handler.fetch_one(query, (to_account,))
             if result:
                 distance, category = result
             else:
@@ -154,30 +252,11 @@ class NewMainWindow(QMainWindow):
                 'category': category
             }
 
-            # Insert the qlog entry into the database
-            query = """
-                INSERT INTO new_schema.qlog (entry_date, entry_time, service_date, amount, from__account, "comment", deduction, t_code, distance, to_account, category)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """
-            self.db_handler.execute_query(query, (
-                qlog_entry['entry_date'], qlog_entry['entry_time'], qlog_entry['service_date'], qlog_entry['amount'],
-                qlog_entry['from_account'], qlog_entry['comment'], qlog_entry['deduction'], qlog_entry['t_code'],
-                qlog_entry['distance'], qlog_entry['to_account'], qlog_entry['category']
-            ))
+            # Handle the transaction
+            self.transaction_handler.handle_transaction(qlog_entry, from_account, to_account, amount)
 
-            # Reset all data entry fields to their original state
-            self.data_entry_widget.date_list_box.setDate(QDate.currentDate())
-            self.data_entry_widget.amount_input.clear()
-            self.data_entry_widget.combo_box_from.setCurrentIndex(0)
-            self.data_entry_widget.comment_box.clear()
-            self.data_entry_widget.tax_checkbox.setChecked(False)
-            self.data_entry_widget.combo_box_to.setCurrentIndex(0)
-
-            # Reload the budget table to update the values
-            self.budget_area.load_data()
-
-            # Reload the transaction detail table to update the values
-            self.transaction_detail_area.load_data(self.current_category)
+            # Reinitialize the application
+            self.app_initializer.initialize()
 
         except Exception as e:
             self.show_error_message(f"An error occurred: {e}")
