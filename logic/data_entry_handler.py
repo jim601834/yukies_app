@@ -59,3 +59,20 @@ class DataEntryHandler:
 
         except Exception as e:
             raise Exception(f"An error occurred while loading combo boxes: {e}")
+
+    def fill_qlog_entry(self, to_account, data_entry_widget, t_code_holder):
+        # Implement the logic to fill the qlog entry based on the to_account and other parameters
+        data_entry_widget.qlog_entry['to_account'] = to_account
+        data_entry_widget.qlog_entry['t_code'] = t_code_holder
+        # Add any additional logic needed to fill the qlog entry
+
+    def construct_qlog_entry(self, data_entry_widget, t_code_holder):
+        # Implement the logic to construct the qlog entry based on the data entry widget and t_code_holder
+        qlog_entry = {
+            'to_account': data_entry_widget.qlog_entry.get('to_account'),
+            't_code': t_code_holder,
+            'from_account': data_entry_widget.combo_box_from.currentText(),
+            'amount': data_entry_widget.amount_input.value(),
+            'date': QDateTime.currentDateTime().toString(Qt.ISODate)
+        }
+        return qlog_entry

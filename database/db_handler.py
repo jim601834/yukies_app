@@ -1,47 +1,26 @@
 import psycopg2
 
 class DBHandler:
-    def __init__(self, config):
-        self.config = config
-        self.connection = None
-
-    def connect(self):
-        if self.connection is None:
-            self.connection = psycopg2.connect(**self.config)
-
-    def fetch_all(self, query, params=None):
-        self.connect()
-        with self.connection.cursor() as cursor:
-            cursor.execute(query, params)
-            return cursor.fetchall()
-
-    def fetch_one(self, query, params=None):
-        self.connect()
-        with self.connection.cursor() as cursor:
-            cursor.execute(query, params)
-            return cursor.fetchone()
-
-    def execute_query(self, query, params=None):
-        self.connect()
-        with self.connection.cursor() as cursor:
-            cursor.execute(query, params)
-            self.connection.commit()
+    def __init__(self, db_config):
+        self.connection = psycopg2.connect(**db_config)
+        self.cursor = self.connection.cursor()
 
     def begin_transaction(self):
-        self.connect()
-        self.connection.autocommit = False
+        self.cursor.execute("BEGIN")
 
     def commit_transaction(self):
-        if self.connection:
-            self.connection.commit()
-            self.connection.autocommit = True
+        self.cursor.execute("COMMIT")
 
     def rollback_transaction(self):
-        if self.connection:
-            self.connection.rollback()
-            self.connection.autocommit = True
+        self.cursor.execute("ROLLBACK")
 
-    def close(self):
-        if self.connection:
-            self.connection.close()
-            self.connection = None
+    def fetch_one(self, query, params):
+        self.cursor.execute(query, params)
+        return self.cursor.fetchone()
+
+    def fetch_all(self, query):
+        self.cursor.execute(query)
+        return self.cursor.fetchall()
+
+    def execute_query(self, query, params):
+        self.cursor.execute(query, params)
