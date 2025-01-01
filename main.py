@@ -10,7 +10,7 @@ def main():
     if sign_in_window.exec() == QDialog.Accepted:
         # Show the main application window upon successful sign-in
         main_window = NewMainWindow()
-        main_window.show()
+        main_window.showMaximized()  # Ensure the window opens maximized
         app.exec()
 
 if __name__ == "__main__":

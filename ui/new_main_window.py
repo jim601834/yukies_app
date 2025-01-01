@@ -1,6 +1,5 @@
-from PySide6.QtWidgets import QMainWindow, QApplication, QVBoxLayout, QGridLayout, QScrollArea, QWidget, QMessageBox, QLabel, QSizePolicy
+from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QMessageBox, QScrollArea, QLabel, QSizePolicy, QGridLayout
 from logic.notifications import send_error_notification
-from ui.data_entry_widget import DataEntryWidget
 from logic.app_initializer import AppInitializer
 from logic.transaction_handler import TransactionHandler
 from logic.data_entry_handler import DataEntryHandler
@@ -20,9 +19,22 @@ class NewMainWindow(QMainWindow):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
+        # Create a container for the data entry widget
+        data_entry_container = QWidget()
+        data_entry_layout = QVBoxLayout(data_entry_container)
+        data_entry_layout.setContentsMargins(0, 0, 0, 0)
+        data_entry_layout.setSpacing(0)
+
+        # Set fixed height for the container (20% smaller)
+        data_entry_container.setFixedHeight(64)  # Adjust the height as needed
+
         # Data entry area
+        from ui.data_entry_widget import DataEntryWidget  # Move import here to avoid circular import
         self.data_entry_widget = DataEntryWidget()
-        main_layout.addWidget(self.data_entry_widget)
+        data_entry_layout.addWidget(self.data_entry_widget)
+
+        # Add the data entry container to the main layout
+        main_layout.addWidget(data_entry_container)
 
         # Variable to store the title of the button pressed
         self.t_code_holder = None
@@ -50,9 +62,6 @@ class NewMainWindow(QMainWindow):
 
         # Initialize the data entry handler
         self.data_entry_handler = DataEntryHandler(self.app_initializer.db_handler)
-
-        # Maximize the window
-        self.showMaximized()
 
         # Connect the submit button to the submit method
         self.data_entry_widget.submit_button.clicked.connect(self.on_submit_button_clicked)
@@ -176,7 +185,8 @@ class NewMainWindow(QMainWindow):
 
 if __name__ == "__main__":
     import sys
+    from PySide6.QtWidgets import QApplication
     app = QApplication(sys.argv)
     window = NewMainWindow()
-    window.show()
+    window.showMaximized()  # Ensure the window opens maximized
     sys.exit(app.exec())
