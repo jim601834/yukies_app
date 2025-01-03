@@ -5,7 +5,7 @@ import os
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
 
-from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QScrollArea, QGridLayout, QLabel, QTableView
+from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QScrollArea, QGridLayout, QLabel, QTableView, QSizePolicy
 from PySide6.QtCore import Qt
 from yukies_app.ui.data_entry_widget import DataEntryWidget  # Use absolute import
 
@@ -46,8 +46,14 @@ class NewMainWindow(QMainWindow):
                 area_layout.addWidget(table_view)
 
                 scroll_area.setWidget(area_widget)
+                scroll_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
                 self.grid_layout.addWidget(scroll_area, i, j)
 
+        # Set the grid layout to expand and fill the remaining space
+        self.grid_layout.setRowStretch(0, 1)
+        self.grid_layout.setRowStretch(1, 1)
+        self.grid_layout.setColumnStretch(0, 1)
+        self.grid_layout.setColumnStretch(1, 1)
+
         # Maximize the window
-        self.showMaximized()python main.py
-        
+        self.showMaximized()

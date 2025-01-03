@@ -8,10 +8,13 @@ class DataEntryWidget(QWidget):
     def __init__(self):
         super().__init__()
 
+        # Set background color for the data entry widget
+        # self.setStyleSheet("background-color: lightgreen;")
+
         layout = QVBoxLayout(self)
 
         # Add a smaller fixed-size spacer at the top
-        layout.addSpacerItem(QSpacerItem(20, 5, QSizePolicy.Minimum, QSizePolicy.Fixed))
+        layout.addSpacerItem(QSpacerItem(20, 2, QSizePolicy.Minimum, QSizePolicy.Fixed))
 
         # Create a horizontal layout for the input fields
         input_layout = QHBoxLayout()
@@ -146,10 +149,10 @@ class DataEntryWidget(QWidget):
         layout.addLayout(input_layout)
 
         # Add a larger vertical spacer at the bottom
-        layout.addSpacerItem(QSpacerItem(20, 35, QSizePolicy.Minimum, QSizePolicy.Expanding))
+        layout.addSpacerItem(QSpacerItem(20, 45, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
         # Set fixed height for the entire data entry area
-        self.setFixedHeight(5 * 36)
+        self.setFixedHeight(40)
 
         # Connect buttons to slots
         self.deposit_button.clicked.connect(self.on_function_button_clicked)
