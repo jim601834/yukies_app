@@ -49,5 +49,4 @@ class NewMainWindow(QMainWindow):
                 self.grid_layout.addWidget(scroll_area, i, j)
 
         # Maximize the window
-        self.showMaximized()python main.py
-        
+        self.showMaximized()
