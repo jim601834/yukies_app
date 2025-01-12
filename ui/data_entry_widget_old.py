@@ -13,9 +13,6 @@ class DataEntryWidget(QWidget):
 
         layout = QVBoxLayout(self)
 
-        # Adjust the top margin to move everything up by 6 pixels
-        layout.setContentsMargins(0, -6, 0, 0)
-
         # Add a smaller fixed-size spacer at the top
         layout.addSpacerItem(QSpacerItem(20, 2, QSizePolicy.Minimum, QSizePolicy.Fixed))
 
@@ -28,8 +25,8 @@ class DataEntryWidget(QWidget):
 
         # "Reset" button
         self.reset_button = QPushButton("Reset")
-        self.reset_button.setStyleSheet("background-color: lightgreen; border: 3px solid red; font-size: 10pt; margin: 0px;")
-        self.reset_button.setFixedHeight(29)
+        self.reset_button.setStyleSheet("background-color: green; border: 3px solid red; font-size: 10pt;")
+        self.reset_button.setFixedHeight(32)
         self.reset_button.setFixedWidth(67)
         input_layout.addWidget(self.reset_button)
 
@@ -97,7 +94,6 @@ class DataEntryWidget(QWidget):
         self.combo_box_to.setFixedWidth(160)
         self.combo_box_to.setFixedHeight(32)
         self.combo_box_to.setEnabled(False)
-        self.combo_box_to.setStyleSheet("background-color: white;")
         input_layout.addWidget(self.combo_box_to)
 
         # Spacer between "To" and "From" combo boxes
@@ -110,7 +106,6 @@ class DataEntryWidget(QWidget):
         self.combo_box_from.setFixedWidth(160)
         self.combo_box_from.setFixedHeight(32)
         self.combo_box_from.setEnabled(False)
-        self.combo_box_from.setStyleSheet("background-color: white;")
         input_layout.addWidget(self.combo_box_from)
 
         # Spacer between "From" and "Amount" fields
@@ -123,7 +118,6 @@ class DataEntryWidget(QWidget):
         self.amount_input.setPlaceholderText("$0000.00")
         self.amount_input.setFixedWidth(60)  # Reduced width by 25%
         self.amount_input.setFixedHeight(32)
-        self.amount_input.setStyleSheet("background-color: white;")
         input_layout.addWidget(self.amount_input)
 
         # Spacer between "Amount" and "Comment" fields
@@ -133,9 +127,8 @@ class DataEntryWidget(QWidget):
         # "Comment" input box
         self.comment_input = QLineEdit()
         self.comment_input.setPlaceholderText("Purpose/Comment")
-        self.comment_input.setFixedWidth(106)  # Reduced width by 25%
+        self.comment_input.setFixedWidth(104)  # Reduced width by 25%
         self.comment_input.setFixedHeight(32)
-        self.comment_input.setStyleSheet("background-color: white;")
         input_layout.addWidget(self.comment_input)
 
         # Spacer between "Comment" and "Tax" fields
@@ -146,12 +139,10 @@ class DataEntryWidget(QWidget):
         tax_layout = QHBoxLayout()
         self.tax_checkbox = QCheckBox()
         self.tax_checkbox.setFixedHeight(32)
-        self.tax_checkbox.setStyleSheet("background-color: transparent;")
         tax_layout.addWidget(self.tax_checkbox)
         tax_label = QLabel("Tax")
         tax_label.setContentsMargins(0, 0, 0, 0)
         tax_label.setFixedHeight(32)
-        tax_label.setStyleSheet("background-color: transparent;")
         tax_layout.addWidget(tax_label)
         input_layout.addLayout(tax_layout)
 
