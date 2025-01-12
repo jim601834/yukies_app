@@ -26,20 +26,7 @@ class DataEntryWidget(QWidget):
         input_layout.setContentsMargins(0, 0, 0, 0)
         input_layout.setSpacing(5)
 
-        # "Reset" button
-        self.reset_button = QPushButton("Reset")
-        self.reset_button.setStyleSheet("background-color: lightgreen; border: 3px solid red; font-size: 10pt; margin: 0px;")
-        self.reset_button.setFixedHeight(29)
-        self.reset_button.setFixedWidth(67)
-        input_layout.addWidget(self.reset_button)
-
-        # "Maintain" button
-        self.maintain_button = QPushButton("Maintain")
-        self.maintain_button.setStyleSheet("background-color: lightgray; font-size: 10pt;")
-        self.maintain_button.setFixedHeight(32)
-        self.maintain_button.setFixedWidth(67)
-        input_layout.addWidget(self.maintain_button)
-
+        # Remove "Reset" and "Maintain" buttons
         # "Refund" button
         self.refund_button = QPushButton("Refund")
         self.refund_button.setStyleSheet("background-color: lightcyan; font-size: 10pt;")
@@ -177,7 +164,6 @@ class DataEntryWidget(QWidget):
         self.pay_button.clicked.connect(self.on_function_button_clicked)
         self.refund_button.clicked.connect(self.on_function_button_clicked)
         self.submit_button.clicked.connect(self.on_submit_button_clicked)
-        self.reset_button.clicked.connect(self.on_reset_button_clicked)  # Connect reset button
 
         # Store the currently active button
         self.active_button = None

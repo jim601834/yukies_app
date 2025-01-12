@@ -5,9 +5,10 @@ import os
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
 
-from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QScrollArea, QGridLayout, QLabel, QTableView, QSizePolicy
+from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QScrollArea, QGridLayout, QLabel, QTableView, QSizePolicy
 from PySide6.QtCore import Qt
 from yukies_app.ui.data_entry_widget import DataEntryWidget  # Use absolute import
+from yukies_app.ui.app_control import AppControlWidget  # Import AppControlWidget
 
 class NewMainWindow(QMainWindow):
     def __init__(self):
@@ -17,15 +18,23 @@ class NewMainWindow(QMainWindow):
         # Create central widget
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
-        layout = QVBoxLayout(central_widget)
+        main_layout = QVBoxLayout(central_widget)
 
-        # Create and add the data entry widget with reduced fixed height
+        # Create a horizontal layout for the control and data entry widgets
+        control_data_layout = QHBoxLayout()
+        main_layout.addLayout(control_data_layout)
+
+        # Create and add the app control widget
+        self.app_control_widget = AppControlWidget()
+        control_data_layout.addWidget(self.app_control_widget)
+
+        # Create and add the data entry widget
         self.data_entry_widget = DataEntryWidget()
-        layout.addWidget(self.data_entry_widget)
+        control_data_layout.addWidget(self.data_entry_widget)
 
         # Create a grid layout for the scrollable areas
         self.grid_layout = QGridLayout()
-        layout.addLayout(self.grid_layout)
+        main_layout.addLayout(self.grid_layout)
 
         headings = ["Budget", "Transaction Detail", "Area 3", "Area 4"]
         for i in range(2):
