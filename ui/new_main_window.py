@@ -2,7 +2,7 @@ import sys
 import os
 import json
 from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QScrollArea, QGridLayout, QTableView, QSizePolicy, QStackedWidget
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal, Slot
 from yukies_app.ui.data_entry_widget import DataEntryWidget  # Use absolute import
 from yukies_app.ui.app_control import AppControlWidget  # Import AppControlWidget
 from yukies_app.ui.clickable_label import ClickableLabel  # Import ClickableLabel
@@ -12,12 +12,14 @@ def load_transition_rules(filepath):
         return json.load(file)
 
 class NewMainWindow(QMainWindow):
+    area_expanded = Signal(bool)  # Define a signal for area expansion
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle("New Main Window")
 
         # Load transition rules
-        self.transition_rules = load_transition_rules('F:/yukies_project/page_transitions_202501130959.json')["page_transitions"]
+        self.transition_rules = load_transition_rules('F:/yukies_project/page_transitions_202501132048.json')["page_transitions"]
 
         # Track current page
         self.current_page = 1
@@ -48,6 +50,9 @@ class NewMainWindow(QMainWindow):
 
         # Maximize the window
         self.showMaximized()
+
+        # Connect the area_expanded signal to the slot
+        self.area_expanded.connect(self.handle_area_expansion)
 
     def create_pages(self):
         self.page_1_widget = self.create_page_1()
@@ -275,3 +280,16 @@ class NewMainWindow(QMainWindow):
                 self.stacked_widget.setCurrentIndex(next_page - 1)
                 self.current_page = next_page
                 break
+
+    @Slot(bool)
+    def handle_area_expansion(self, expanded):
+        print(f"Area expanded: {expanded}")
+        # Restart the logic here based on the expanded state
+        self.restart_logic(expanded)
+
+    def restart_logic(self, expanded):
+        # Implement your logic here based on the expanded state
+        if expanded:
+            print("Restarting logic for expanded area")
+        else:
+            print("Restarting logic for collapsed area")
