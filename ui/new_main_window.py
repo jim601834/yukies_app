@@ -2,7 +2,7 @@ import sys
 import os
 import json
 import pandas as pd
-from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QScrollArea, QGridLayout, QTableView, QSizePolicy, QStackedWidget, QHeaderView, QApplication
+from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QScrollArea, QGridLayout, QTableView, QSizePolicy, QStackedWidget, QHeaderView, QApplication, QLabel
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 from yukies_app.ui.data_entry_widget import DataEntryWidget  # Use absolute import
@@ -23,7 +23,7 @@ class NewMainWindow(QMainWindow):
         self.setWindowTitle("New Main Window")
 
         # Load transition rules
-        self.transition_rules = load_transition_rules('F:/yukies_project/page_transitions_202501132048.json')["page_transitions"]
+        self.transition_rules = load_transition_rules('F:/yukies_project/yukies_app/page_transitions.json')["page_transitions"]
 
         # Track current page
         self.current_page = 1
@@ -71,18 +71,16 @@ class NewMainWindow(QMainWindow):
         self.page_2_widget = self.create_page_2()
         self.page_3_widget = self.create_page_3()
         self.page_4_widget = self.create_page_4()
-        self.page_5_widget = self.create_page_5()  # New page for testing
 
         self.stacked_widget.addWidget(self.page_1_widget)
         self.stacked_widget.addWidget(self.page_2_widget)
         self.stacked_widget.addWidget(self.page_3_widget)
         self.stacked_widget.addWidget(self.page_4_widget)
-        self.stacked_widget.addWidget(self.page_5_widget)  # Add new page to stacked widget
 
     def create_page_1(self):
         page_widget = QWidget()
-        page_widget.setStyleSheet("background-color: lightgray;")  # Set background color
         grid_layout = QGridLayout(page_widget)
+        grid_layout.setSpacing(0)  # Remove space between areas
         headings = ["Budget", "Transaction Detail", "Payment Methods", "Analysis"]
         for i in range(2):
             for j in range(2):
@@ -90,6 +88,8 @@ class NewMainWindow(QMainWindow):
                 scroll_area.setWidgetResizable(True)
                 area_widget = QWidget()
                 area_layout = QVBoxLayout(area_widget)
+                area_layout.setContentsMargins(0, 0, 0, 0)  # Remove margins
+                area_layout.setSpacing(0)  # Remove space between widgets
 
                 # Add heading to each area
                 heading_label = ClickableLabel(headings[i * 2 + j])
@@ -127,8 +127,8 @@ class NewMainWindow(QMainWindow):
 
     def create_page_2(self):
         page_widget = QWidget()
-        page_widget.setStyleSheet("background-color: lightgray;")  # Set background color
         grid_layout = QGridLayout(page_widget)
+        grid_layout.setSpacing(0)  # Remove space between areas
         headings = ["Budget", "Transaction Detail", "Analysis"]
         positions = [(0, 0), (0, 1), (1, 1)]
         
@@ -137,6 +137,8 @@ class NewMainWindow(QMainWindow):
         scroll_area_budget.setWidgetResizable(True)
         area_widget_budget = QWidget()
         area_layout_budget = QVBoxLayout(area_widget_budget)
+        area_layout_budget.setContentsMargins(0, 0, 0, 0)  # Remove margins
+        area_layout_budget.setSpacing(0)  # Remove space between widgets
 
         heading_label_budget = ClickableLabel(headings[0])
         heading_label_budget.setAlignment(Qt.AlignCenter)
@@ -164,6 +166,8 @@ class NewMainWindow(QMainWindow):
             scroll_area.setWidgetResizable(True)
             area_widget = QWidget()
             area_layout = QVBoxLayout(area_widget)
+            area_layout.setContentsMargins(0, 0, 0, 0)  # Remove margins
+            area_layout.setSpacing(0)  # Remove space between widgets
 
             heading_label = ClickableLabel(headings[index + 1])
             heading_label.setAlignment(Qt.AlignCenter)
@@ -195,8 +199,8 @@ class NewMainWindow(QMainWindow):
 
     def create_page_3(self):
         page_widget = QWidget()
-        page_widget.setStyleSheet("background-color: lightgray;")  # Set background color
         grid_layout = QGridLayout(page_widget)
+        grid_layout.setSpacing(0)  # Remove space between areas
         headings = ["Budget", "Payment Methods", "Transaction Detail"]
         
         # Budget (upper left)
@@ -204,6 +208,8 @@ class NewMainWindow(QMainWindow):
         scroll_area_budget.setWidgetResizable(True)
         area_widget_budget = QWidget()
         area_layout_budget = QVBoxLayout(area_widget_budget)
+        area_layout_budget.setContentsMargins(0, 0, 0, 0)  # Remove margins
+        area_layout_budget.setSpacing(0)  # Remove space between widgets
 
         heading_label_budget = ClickableLabel(headings[0])
         heading_label_budget.setAlignment(Qt.AlignCenter)
@@ -230,6 +236,8 @@ class NewMainWindow(QMainWindow):
         scroll_area_payment_methods.setWidgetResizable(True)
         area_widget_payment_methods = QWidget()
         area_layout_payment_methods = QVBoxLayout(area_widget_payment_methods)
+        area_layout_payment_methods.setContentsMargins(0, 0, 0, 0)  # Remove margins
+        area_layout_payment_methods.setSpacing(0)  # Remove space between widgets
 
         heading_label_payment_methods = ClickableLabel(headings[1])
         heading_label_payment_methods.setAlignment(Qt.AlignCenter)
@@ -256,6 +264,8 @@ class NewMainWindow(QMainWindow):
         scroll_area_transaction.setWidgetResizable(True)
         area_widget_transaction = QWidget()
         area_layout_transaction = QVBoxLayout(area_widget_transaction)
+        area_layout_transaction.setContentsMargins(0, 0, 0, 0)  # Remove margins
+        area_layout_transaction.setSpacing(0)  # Remove space between widgets
 
         heading_label_transaction = ClickableLabel(headings[2])
         heading_label_transaction.setAlignment(Qt.AlignCenter)
@@ -287,52 +297,6 @@ class NewMainWindow(QMainWindow):
 
     def create_page_4(self):
         page_widget = QWidget()
-        page_widget.setStyleSheet("background-color: lightgray;")  # Set background color
-        grid_layout = QGridLayout(page_widget)
-        headings = ["Budget", "Transaction Detail"]
-        positions = [(0, 0), (0, 1)]
-        for index, (i, j) in enumerate(positions):
-            scroll_area = QScrollArea()
-            scroll_area.setWidgetResizable(True)
-            area_widget = QWidget()
-            area_layout = QVBoxLayout(area_widget)
-
-            # Add heading to each area
-            heading_label = ClickableLabel(headings[index])
-            heading_label.setAlignment(Qt.AlignCenter)
-            heading_label.setStyleSheet("font-size: 8pt; background-color: lightgray")
-            heading_label.clicked.connect(self.handle_title_click)
-            area_layout.addWidget(heading_label)
-
-            # Add a table view to each area
-            table_view = QTableView()
-            area_layout.addWidget(table_view)
-
-            scroll_area.setWidget(area_widget)
-            scroll_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-            grid_layout.addWidget(scroll_area, i, j)
-
-            # Ensure the scroll area and its parent widgets are visible
-            scroll_area.setVisible(True)
-            area_widget.setVisible(True)
-
-            # Debug prints
-            print(f"Page 4: Added table view at position ({i}, {j})")
-
-            # Store reference to the budget table view
-            if headings[index] == "Budget":
-                self.table_view_budget_page_4 = table_view
-
-        # Set the grid layout to expand and fill the remaining space
-        grid_layout.setRowStretch(0, 1)
-        grid_layout.setColumnStretch(0, 1)
-        grid_layout.setColumnStretch(1, 1)
-
-        return page_widget
-
-    def create_page_5(self):
-        page_widget = QWidget()
-        page_widget.setStyleSheet("background-color: lightgray;")  # Set background color
         layout = QVBoxLayout(page_widget)
 
         # Create a simple DataFrame
@@ -354,8 +318,11 @@ class NewMainWindow(QMainWindow):
         # Add the table view to the layout
         layout.addWidget(table_view)
 
+        # Store reference to the budget table view
+        self.table_view_budget_page_4 = table_view
+
         # Debug prints
-        print("Page 5: Added simple DataFrame table view")
+        print("Page 4: Added simple DataFrame table view")
 
         return page_widget
 

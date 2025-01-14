@@ -1,0 +1,51 @@
+{
+"page_transitions": [
+	{
+		"id" : 1,
+		"from_page" : "1",
+		"clicked_area" : "1",
+		"to_page" : "2"
+	},
+	{
+		"id" : 2,
+		"from_page" : "1",
+		"clicked_area" : "2",
+		"to_page" : "3"
+	},
+	{
+		"id" : 3,
+		"from_page" : "2",
+		"clicked_area" : "1",
+		"to_page" : "1"
+	},
+	{
+		"id" : 4,
+		"from_page" : "3",
+		"clicked_area" : "2",
+		"to_page" : "1"
+	},
+	{
+		"id" : 5,
+		"from_page" : "2",
+		"clicked_area" : "2",
+		"to_page" : "4"
+	},
+	{
+		"id" : 6,
+		"from_page" : "3",
+		"clicked_area" : "1",
+		"to_page" : "4"
+	},
+	{
+		"id" : 7,
+		"from_page" : "4",
+		"clicked_area" : "1",
+		"to_page" : "3"
+	},
+	{
+		"id" : 8,
+		"from_page" : "4",
+		"clicked_area" : "2",
+		"to_page" : "2"
+	}
+]}
