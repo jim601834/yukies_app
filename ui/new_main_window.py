@@ -2,7 +2,7 @@ import sys
 import os
 import json
 import pandas as pd
-from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QScrollArea, QGridLayout, QTableView, QSizePolicy, QStackedWidget, QHeaderView
+from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QScrollArea, QGridLayout, QTableView, QSizePolicy, QStackedWidget, QHeaderView, QApplication
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 from yukies_app.ui.data_entry_widget import DataEntryWidget  # Use absolute import
@@ -71,11 +71,13 @@ class NewMainWindow(QMainWindow):
         self.page_2_widget = self.create_page_2()
         self.page_3_widget = self.create_page_3()
         self.page_4_widget = self.create_page_4()
+        self.page_5_widget = self.create_page_5()  # New page for testing
 
         self.stacked_widget.addWidget(self.page_1_widget)
         self.stacked_widget.addWidget(self.page_2_widget)
         self.stacked_widget.addWidget(self.page_3_widget)
         self.stacked_widget.addWidget(self.page_4_widget)
+        self.stacked_widget.addWidget(self.page_5_widget)  # Add new page to stacked widget
 
     def create_page_1(self):
         page_widget = QWidget()
@@ -102,6 +104,13 @@ class NewMainWindow(QMainWindow):
                 scroll_area.setWidget(area_widget)
                 scroll_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
                 grid_layout.addWidget(scroll_area, i, j)
+
+                # Ensure the scroll area and its parent widgets are visible
+                scroll_area.setVisible(True)
+                area_widget.setVisible(True)
+
+                # Debug prints
+                print(f"Page 1: Added table view at position ({i}, {j})")
 
         # Set the grid layout to expand and fill the remaining space
         grid_layout.setRowStretch(0, 1)
@@ -136,6 +145,13 @@ class NewMainWindow(QMainWindow):
         scroll_area_budget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         grid_layout.addWidget(scroll_area_budget, 0, 0, 2, 1)  # Span 2 rows
 
+        # Ensure the scroll area and its parent widgets are visible
+        scroll_area_budget.setVisible(True)
+        area_widget_budget.setVisible(True)
+
+        # Debug prints
+        print("Page 2: Added budget table view")
+
         # Transaction Detail and Analysis (right side)
         for index, (i, j) in enumerate(positions[1:]):
             scroll_area = QScrollArea()
@@ -155,6 +171,13 @@ class NewMainWindow(QMainWindow):
             scroll_area.setWidget(area_widget)
             scroll_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
             grid_layout.addWidget(scroll_area, i, j)
+
+            # Ensure the scroll area and its parent widgets are visible
+            scroll_area.setVisible(True)
+            area_widget.setVisible(True)
+
+            # Debug prints
+            print(f"Page 2: Added table view at position ({i}, {j})")
 
         # Set the grid layout to expand and fill the remaining space
         grid_layout.setRowStretch(0, 1)
@@ -188,6 +211,13 @@ class NewMainWindow(QMainWindow):
         scroll_area_budget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         grid_layout.addWidget(scroll_area_budget, 0, 0)
 
+        # Ensure the scroll area and its parent widgets are visible
+        scroll_area_budget.setVisible(True)
+        area_widget_budget.setVisible(True)
+
+        # Debug prints
+        print("Page 3: Added budget table view")
+
         # Payment Methods (lower left)
         scroll_area_payment_methods = QScrollArea()
         scroll_area_payment_methods.setWidgetResizable(True)
@@ -207,6 +237,13 @@ class NewMainWindow(QMainWindow):
         scroll_area_payment_methods.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         grid_layout.addWidget(scroll_area_payment_methods, 1, 0)
 
+        # Ensure the scroll area and its parent widgets are visible
+        scroll_area_payment_methods.setVisible(True)
+        area_widget_payment_methods.setVisible(True)
+
+        # Debug prints
+        print("Page 3: Added payment methods table view")
+
         # Transaction Detail (full height on the right)
         scroll_area_transaction = QScrollArea()
         scroll_area_transaction.setWidgetResizable(True)
@@ -225,6 +262,13 @@ class NewMainWindow(QMainWindow):
         scroll_area_transaction.setWidget(area_widget_transaction)
         scroll_area_transaction.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         grid_layout.addWidget(scroll_area_transaction, 0, 1, 2, 1)  # Span 2 rows
+
+        # Ensure the scroll area and its parent widgets are visible
+        scroll_area_transaction.setVisible(True)
+        area_widget_transaction.setVisible(True)
+
+        # Debug prints
+        print("Page 3: Added transaction detail table view")
 
         # Set the grid layout to expand and fill the remaining space
         grid_layout.setRowStretch(0, 1)
@@ -260,10 +304,45 @@ class NewMainWindow(QMainWindow):
             scroll_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
             grid_layout.addWidget(scroll_area, i, j)
 
+            # Ensure the scroll area and its parent widgets are visible
+            scroll_area.setVisible(True)
+            area_widget.setVisible(True)
+
+            # Debug prints
+            print(f"Page 4: Added table view at position ({i}, {j})")
+
         # Set the grid layout to expand and fill the remaining space
         grid_layout.setRowStretch(0, 1)
         grid_layout.setColumnStretch(0, 1)
         grid_layout.setColumnStretch(1, 1)
+
+        return page_widget
+
+    def create_page_5(self):
+        page_widget = QWidget()
+        layout = QVBoxLayout(page_widget)
+
+        # Create a simple DataFrame
+        data = {'A': [1, 2, 3], 'B': [4, 5, 6]}
+        df = pd.DataFrame(data)
+
+        # Create a QTableView and set the model
+        table_view = QTableView()
+        model = QStandardItemModel()
+        model.setHorizontalHeaderLabels(df.columns)
+
+        for row in df.itertuples(index=False):
+            items = [QStandardItem(str(field)) for field in row]
+            model.appendRow(items)
+
+        table_view.setModel(model)
+        table_view.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
+        # Add the table view to the layout
+        layout.addWidget(table_view)
+
+        # Debug prints
+        print("Page 5: Added simple DataFrame table view")
 
         return page_widget
 
@@ -303,28 +382,10 @@ class NewMainWindow(QMainWindow):
         # Load budget data based on the expanded state
         df = self.budget_logic.load_budget_data(expanded)
         print("Data loaded in restart_logic:", df)  # Debug print
-        self.display_budget_data(df)
+        self.budget_logic.display_budget_data(df, self.table_view_budget)
 
-    def display_budget_data(self, df):
-        print("Displaying data:", df)  # Debug print
-        model = QStandardItemModel()
-        model.setHorizontalHeaderLabels(df.columns)
-
-        for row in df.itertuples(index=False):
-            items = [QStandardItem(str(field)) for field in row]
-            model.appendRow(items)
-
-        print("Setting model for table_view_budget")  # Debug print
-        self.table_view_budget.setModel(model)
-        self.table_view_budget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        print("Model set for table_view_budget")  # Debug print
-
-        # Ensure the table view is visible and properly sized
-        self.table_view_budget.setVisible(True)
-        self.table_view_budget.resizeColumnsToContents()
-        self.table_view_budget.resizeRowsToContents()
-        print("Table view budget is visible and resized")  # Debug print
-
-        # Additional debug prints to check the visibility and size of the table view
-        print(f"Table view budget is visible: {self.table_view_budget.isVisible()}")  # Debug print
-        print(f"Table view budget size: {self.table_view_budget.size()}")  # Debug print
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = NewMainWindow()
+    window.show()
+    sys.exit(app.exec())
