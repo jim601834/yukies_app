@@ -1,26 +1,16 @@
-import psycopg2
+from sqlalchemy import create_engine, MetaData
+from sqlalchemy.orm import sessionmaker
 
 class DBHandler:
-    def __init__(self, db_config):
-        self.connection = psycopg2.connect(**db_config)
-        self.cursor = self.connection.cursor()
+    def __init__(self, db_url):
+        self.engine = create_engine(db_url)
+        self.metadata = MetaData()
+        self.metadata.reflect(bind=self.engine, schema='new_schema')
+        self.Session = sessionmaker(bind=self.engine)
+        print("Available tables:", self.metadata.tables.keys())  # Debug print
 
-    def begin_transaction(self):
-        self.cursor.execute("BEGIN")
+    def get_session(self):
+        return self.Session()
 
-    def commit_transaction(self):
-        self.cursor.execute("COMMIT")
-
-    def rollback_transaction(self):
-        self.cursor.execute("ROLLBACK")
-
-    def fetch_one(self, query, params):
-        self.cursor.execute(query, params)
-        return self.cursor.fetchone()
-
-    def fetch_all(self, query):
-        self.cursor.execute(query)
-        return self.cursor.fetchall()
-
-    def execute_query(self, query, params):
-        self.cursor.execute(query, params)
+    def get_table(self, table_name):
+        return self.metadata.tables[table_name]

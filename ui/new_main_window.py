@@ -1,11 +1,15 @@
 import sys
 import os
 import json
-from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QScrollArea, QGridLayout, QTableView, QSizePolicy, QStackedWidget
+import pandas as pd
+from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QScrollArea, QGridLayout, QTableView, QSizePolicy, QStackedWidget, QHeaderView
 from PySide6.QtCore import Qt, Signal, Slot
+from PySide6.QtGui import QStandardItemModel, QStandardItem
 from yukies_app.ui.data_entry_widget import DataEntryWidget  # Use absolute import
 from yukies_app.ui.app_control import AppControlWidget  # Import AppControlWidget
 from yukies_app.ui.clickable_label import ClickableLabel  # Import ClickableLabel
+from yukies_app.logic.budget_logic import BudgetLogic  # Import BudgetLogic
+from yukies_app.database.db_handler import DBHandler  # Import DBHandler
 
 def load_transition_rules(filepath):
     with open(filepath, 'r') as file:
@@ -53,6 +57,14 @@ class NewMainWindow(QMainWindow):
 
         # Connect the area_expanded signal to the slot
         self.area_expanded.connect(self.handle_area_expansion)
+
+        # Initialize DBHandler and BudgetLogic with connection info
+        db_url = 'postgresql://postgres:sasuke@localhost:5433/yukies_db'
+        self.db_handler = DBHandler(db_url)
+        self.budget_logic = BudgetLogic(self.db_handler)
+
+        # Load initial budget data
+        self.restart_logic(expanded=False)
 
     def create_pages(self):
         self.page_1_widget = self.create_page_1()
@@ -117,8 +129,8 @@ class NewMainWindow(QMainWindow):
         heading_label_budget.clicked.connect(self.handle_title_click)
         area_layout_budget.addWidget(heading_label_budget)
 
-        table_view_budget = QTableView()
-        area_layout_budget.addWidget(table_view_budget)
+        self.table_view_budget = QTableView()  # Ensure this is correctly initialized
+        area_layout_budget.addWidget(self.table_view_budget)
 
         scroll_area_budget.setWidget(area_widget_budget)
         scroll_area_budget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -169,8 +181,8 @@ class NewMainWindow(QMainWindow):
         heading_label_budget.clicked.connect(self.handle_title_click)
         area_layout_budget.addWidget(heading_label_budget)
 
-        table_view_budget = QTableView()
-        area_layout_budget.addWidget(table_view_budget)
+        self.table_view_budget = QTableView()  # Ensure this is correctly initialized
+        area_layout_budget.addWidget(self.table_view_budget)
 
         scroll_area_budget.setWidget(area_widget_budget)
         scroll_area_budget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -288,8 +300,31 @@ class NewMainWindow(QMainWindow):
         self.restart_logic(expanded)
 
     def restart_logic(self, expanded):
-        # Implement your logic here based on the expanded state
-        if expanded:
-            print("Restarting logic for expanded area")
-        else:
-            print("Restarting logic for collapsed area")
+        # Load budget data based on the expanded state
+        df = self.budget_logic.load_budget_data(expanded)
+        print("Data loaded in restart_logic:", df)  # Debug print
+        self.display_budget_data(df)
+
+    def display_budget_data(self, df):
+        print("Displaying data:", df)  # Debug print
+        model = QStandardItemModel()
+        model.setHorizontalHeaderLabels(df.columns)
+
+        for row in df.itertuples(index=False):
+            items = [QStandardItem(str(field)) for field in row]
+            model.appendRow(items)
+
+        print("Setting model for table_view_budget")  # Debug print
+        self.table_view_budget.setModel(model)
+        self.table_view_budget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        print("Model set for table_view_budget")  # Debug print
+
+        # Ensure the table view is visible and properly sized
+        self.table_view_budget.setVisible(True)
+        self.table_view_budget.resizeColumnsToContents()
+        self.table_view_budget.resizeRowsToContents()
+        print("Table view budget is visible and resized")  # Debug print
+
+        # Additional debug prints to check the visibility and size of the table view
+        print(f"Table view budget is visible: {self.table_view_budget.isVisible()}")  # Debug print
+        print(f"Table view budget size: {self.table_view_budget.size()}")  # Debug print
