@@ -81,6 +81,7 @@ class NewMainWindow(QMainWindow):
 
     def create_page_1(self):
         page_widget = QWidget()
+        page_widget.setStyleSheet("background-color: lightgray;")  # Set background color
         grid_layout = QGridLayout(page_widget)
         headings = ["Budget", "Transaction Detail", "Payment Methods", "Analysis"]
         for i in range(2):
@@ -112,6 +113,10 @@ class NewMainWindow(QMainWindow):
                 # Debug prints
                 print(f"Page 1: Added table view at position ({i}, {j})")
 
+                # Store reference to the budget table view
+                if headings[i * 2 + j] == "Budget":
+                    self.table_view_budget_page_1 = table_view
+
         # Set the grid layout to expand and fill the remaining space
         grid_layout.setRowStretch(0, 1)
         grid_layout.setRowStretch(1, 1)
@@ -122,6 +127,7 @@ class NewMainWindow(QMainWindow):
 
     def create_page_2(self):
         page_widget = QWidget()
+        page_widget.setStyleSheet("background-color: lightgray;")  # Set background color
         grid_layout = QGridLayout(page_widget)
         headings = ["Budget", "Transaction Detail", "Analysis"]
         positions = [(0, 0), (0, 1), (1, 1)]
@@ -138,8 +144,8 @@ class NewMainWindow(QMainWindow):
         heading_label_budget.clicked.connect(self.handle_title_click)
         area_layout_budget.addWidget(heading_label_budget)
 
-        self.table_view_budget = QTableView()  # Ensure this is correctly initialized
-        area_layout_budget.addWidget(self.table_view_budget)
+        self.table_view_budget_page_2 = QTableView()  # Ensure this is correctly initialized
+        area_layout_budget.addWidget(self.table_view_budget_page_2)
 
         scroll_area_budget.setWidget(area_widget_budget)
         scroll_area_budget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -189,6 +195,7 @@ class NewMainWindow(QMainWindow):
 
     def create_page_3(self):
         page_widget = QWidget()
+        page_widget.setStyleSheet("background-color: lightgray;")  # Set background color
         grid_layout = QGridLayout(page_widget)
         headings = ["Budget", "Payment Methods", "Transaction Detail"]
         
@@ -204,8 +211,8 @@ class NewMainWindow(QMainWindow):
         heading_label_budget.clicked.connect(self.handle_title_click)
         area_layout_budget.addWidget(heading_label_budget)
 
-        self.table_view_budget = QTableView()  # Ensure this is correctly initialized
-        area_layout_budget.addWidget(self.table_view_budget)
+        self.table_view_budget_page_3 = QTableView()  # Ensure this is correctly initialized
+        area_layout_budget.addWidget(self.table_view_budget_page_3)
 
         scroll_area_budget.setWidget(area_widget_budget)
         scroll_area_budget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -280,6 +287,7 @@ class NewMainWindow(QMainWindow):
 
     def create_page_4(self):
         page_widget = QWidget()
+        page_widget.setStyleSheet("background-color: lightgray;")  # Set background color
         grid_layout = QGridLayout(page_widget)
         headings = ["Budget", "Transaction Detail"]
         positions = [(0, 0), (0, 1)]
@@ -311,6 +319,10 @@ class NewMainWindow(QMainWindow):
             # Debug prints
             print(f"Page 4: Added table view at position ({i}, {j})")
 
+            # Store reference to the budget table view
+            if headings[index] == "Budget":
+                self.table_view_budget_page_4 = table_view
+
         # Set the grid layout to expand and fill the remaining space
         grid_layout.setRowStretch(0, 1)
         grid_layout.setColumnStretch(0, 1)
@@ -320,6 +332,7 @@ class NewMainWindow(QMainWindow):
 
     def create_page_5(self):
         page_widget = QWidget()
+        page_widget.setStyleSheet("background-color: lightgray;")  # Set background color
         layout = QVBoxLayout(page_widget)
 
         # Create a simple DataFrame
@@ -382,7 +395,12 @@ class NewMainWindow(QMainWindow):
         # Load budget data based on the expanded state
         df = self.budget_logic.load_budget_data(expanded)
         print("Data loaded in restart_logic:", df)  # Debug print
-        self.budget_logic.display_budget_data(df, self.table_view_budget)
+
+        # Display budget data on all relevant pages
+        self.budget_logic.display_budget_data(df, self.table_view_budget_page_1)
+        self.budget_logic.display_budget_data(df, self.table_view_budget_page_2)
+        self.budget_logic.display_budget_data(df, self.table_view_budget_page_3)
+        self.budget_logic.display_budget_data(df, self.table_view_budget_page_4)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

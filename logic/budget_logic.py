@@ -1,18 +1,29 @@
 import pandas as pd
 from PySide6.QtGui import QStandardItemModel, QStandardItem
-from PySide6.QtWidgets import QHeaderView  # Import QHeaderView
+from PySide6.QtWidgets import QHeaderView
 
 class BudgetLogic:
     def __init__(self, db_handler):
         self.db_handler = db_handler
 
     def load_budget_data(self, expanded):
-        # Load budget data from the database using DBHandler
-        df = self.db_handler.get_budget_data()
+        # Load budget data from the database using SQLAlchemy
+        query = "SELECT * FROM new_schema.budget"  # Example query
+        with self.db_handler.get_connection() as conn:
+            df = pd.read_sql(query, conn)
         return df
 
     def display_budget_data(self, df, table_view):
+        # Filter required columns
+        df = df[['category', 'amount', 'spent', 'remaining', 'display_order']]
+        
+        # Sort by display_order
+        df = df.sort_values(by='display_order').reset_index(drop=True)
         print("Displaying data:", df)  # Debug print
+
+        # Remove the display_order column for display
+        df = df[['category', 'amount', 'spent', 'remaining']]
+
         model = QStandardItemModel()
         model.setHorizontalHeaderLabels(df.columns)
 
@@ -23,6 +34,11 @@ class BudgetLogic:
         print("Setting model for table_view")  # Debug print
         table_view.setModel(model)
         table_view.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
+        # Adjust the width of the category column
+        category_column_index = df.columns.get_loc('category')
+        table_view.horizontalHeader().resizeSection(category_column_index, 200)  # Adjust width as needed
+
         print("Model set for table_view")  # Debug print
 
         # Ensure the table view is visible and properly sized
