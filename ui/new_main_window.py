@@ -12,6 +12,10 @@ from yukies_app.logic.budget_logic import BudgetLogic  # Import BudgetLogic
 from yukies_app.logic.payment_methods_logic import PaymentMethodsLogic  # Import PaymentMethodsLogic
 from yukies_app.database.db_handler import DBHandler  # Import DBHandler
 
+# Add import at top
+from yukies_app.logic.transaction_detail_logic import TransactionDetailLogic
+
+
 def load_transition_rules(filepath):
     with open(filepath, 'r') as file:
         return json.load(file)
@@ -64,6 +68,9 @@ class NewMainWindow(QMainWindow):
         self.db_handler = DBHandler(db_url)
         self.budget_logic = BudgetLogic(self.db_handler)
         self.payment_methods_logic = PaymentMethodsLogic(self.db_handler)
+
+        # In __init__, add after other logic initialization:
+        self.transaction_detail_logic = TransactionDetailLogic(self.db_handler)
 
         # Load initial budget data
         self.restart_logic(expanded=False)
@@ -408,9 +415,21 @@ class NewMainWindow(QMainWindow):
         df_payment_methods = self.payment_methods_logic.load_payment_methods_data()
         self.payment_methods_logic.display_payment_methods_data(df_payment_methods, self.table_view_payment_methods_page_1)
         self.payment_methods_logic.display_payment_methods_data(df_payment_methods, self.table_view_payment_methods_page_3)
+            
+        # Add transaction detail loading and display
+        try:
+            df_transaction = self.transaction_detail_logic.load_transaction_detail_data()
+            self.transaction_detail_logic.display_transaction_detail_data(df_transaction, self.table_view_transaction_detail_page_1)
+            self.transaction_detail_logic.display_transaction_detail_data(df_transaction, self.table_view_transaction_detail_page_2)
+            self.transaction_detail_logic.display_transaction_detail_data(df_transaction, self.table_view_transaction_detail_page_3)
+            self.transaction_detail_logic.display_transaction_detail_data(df_transaction, self.table_view_transaction_detail_page_4)
+
+        except Exception as e:
+            print(f"Error loading transaction details: {e}")
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = NewMainWindow()
     window.show()
-    sys.exit(app.exec())
+    sys.exit(app.exec())    
