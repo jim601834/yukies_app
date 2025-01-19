@@ -1,435 +1,158 @@
 import sys
-import os
 import json
-import pandas as pd
-from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QScrollArea, QGridLayout, QTableView, QSizePolicy, QStackedWidget, QHeaderView, QApplication, QLabel
-from PySide6.QtCore import Qt, Signal, Slot
-from PySide6.QtGui import QStandardItemModel, QStandardItem, QFont
-from yukies_app.ui.data_entry_widget import DataEntryWidget  # Use absolute import
-from yukies_app.ui.app_control import AppControlWidget  # Import AppControlWidget
-from yukies_app.ui.clickable_label import ClickableLabel  # Import ClickableLabel
-from yukies_app.logic.budget_logic import BudgetLogic  # Import BudgetLogic
-from yukies_app.logic.payment_methods_logic import PaymentMethodsLogic  # Import PaymentMethodsLogic
-from yukies_app.database.db_handler import DBHandler  # Import DBHandler
-
-# Add import at top
-from yukies_app.logic.transaction_detail_logic import TransactionDetailLogic
-
+from PySide6.QtWidgets import (QMainWindow, QVBoxLayout, QHBoxLayout, QWidget,
+                              QStackedWidget, QApplication)
+from PySide6.QtCore import Signal, Slot
+from .data_entry_widget import DataEntryWidget
+from .app_control import AppControlWidget
+from .page_definitions import PageCreator
+from ..logic.budget_logic import BudgetLogic
+from ..logic.payment_methods_logic import PaymentMethodsLogic
+from ..logic.transaction_detail_logic import TransactionDetailLogic
+from ..database.db_handler import DBHandler
 
 def load_transition_rules(filepath):
     with open(filepath, 'r') as file:
         return json.load(file)
 
 class NewMainWindow(QMainWindow):
-    area_expanded = Signal(bool)  # Define a signal for area expansion
+    area_expanded = Signal(bool)
 
     def __init__(self):
         super().__init__()
         self.setWindowTitle("New Main Window")
 
+        # Initialize database and logic components
+        db_url = 'postgresql://postgres:sasuke@localhost:5433/yukies_db'
+        self.db_handler = DBHandler(db_url)
+        
+        # Initialize logic components
+        self.transaction_detail_logic = TransactionDetailLogic(self.db_handler)
+        self.budget_logic = BudgetLogic(self.db_handler, self.transaction_detail_logic)
+        self.payment_methods_logic = PaymentMethodsLogic(self.db_handler)
+
+        # Initialize page creator
+        self.page_creator = PageCreator(self)
+
         # Load transition rules
         self.transition_rules = load_transition_rules('F:/yukies_project/yukies_app/page_transitions.json')["page_transitions"]
-
-        # Track current page
         self.current_page = 1
 
-        # Create central widget
+        # Create UI components
+        self.setup_ui()
+        
+        # Register views and load data
+        self.register_transaction_views()
+        self.restart_logic(expanded=False)
+        
+        self.showMaximized()
+
+    def setup_ui(self):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         self.main_layout = QVBoxLayout(central_widget)
 
-        # Create a horizontal layout for the control and data entry widgets
+        # Control and data entry widgets
         control_data_layout = QHBoxLayout()
         self.main_layout.addLayout(control_data_layout)
 
-        # Create and add the app control widget
         self.app_control_widget = AppControlWidget()
         control_data_layout.addWidget(self.app_control_widget)
-
-        # Create and add the data entry widget
+        
         self.data_entry_widget = DataEntryWidget()
         control_data_layout.addWidget(self.data_entry_widget)
 
-        # Create a stacked widget for the pages
+        # Stacked widget for pages
         self.stacked_widget = QStackedWidget()
         self.main_layout.addWidget(self.stacked_widget)
 
         # Create pages
         self.create_pages()
 
-        # Maximize the window
-        self.showMaximized()
-
-        # Connect the area_expanded signal to the slot
+        # Connect signals
         self.area_expanded.connect(self.handle_area_expansion)
 
-        # Initialize DBHandler and BudgetLogic with connection info
-        db_url = 'postgresql://postgres:sasuke@localhost:5433/yukies_db'
-        self.db_handler = DBHandler(db_url)
-        self.budget_logic = BudgetLogic(self.db_handler)
-        self.payment_methods_logic = PaymentMethodsLogic(self.db_handler)
-
-        # In __init__, add after other logic initialization:
-        self.transaction_detail_logic = TransactionDetailLogic(self.db_handler)
-
-        # Load initial budget data
-        self.restart_logic(expanded=False)
-
     def create_pages(self):
-        self.page_1_widget = self.create_page_1()
-        self.page_2_widget = self.create_page_2()
-        self.page_3_widget = self.create_page_3()
-        self.page_4_widget = self.create_page_4()
+        self.page_1_widget = self.page_creator.create_page_1()
+        self.page_2_widget = self.page_creator.create_page_2()
+        self.page_3_widget = self.page_creator.create_page_3()
+        self.page_4_widget = self.page_creator.create_page_4()
 
         self.stacked_widget.addWidget(self.page_1_widget)
         self.stacked_widget.addWidget(self.page_2_widget)
         self.stacked_widget.addWidget(self.page_3_widget)
         self.stacked_widget.addWidget(self.page_4_widget)
 
-    def create_page_1(self):
-        page_widget = QWidget()
-        grid_layout = QGridLayout(page_widget)
-        grid_layout.setSpacing(0)  # Remove space between areas
-        headings = ["Budget", "Transaction Detail", "Payment Methods", "Analysis"]
-        for i in range(2):
-            for j in range(2):
-                scroll_area = QScrollArea()
-                scroll_area.setWidgetResizable(True)
-                area_widget = QWidget()
-                area_layout = QVBoxLayout(area_widget)
-                area_layout.setContentsMargins(0, 0, 0, 0)  # Remove margins
-                area_layout.setSpacing(0)  # Remove space between widgets
-
-                # Add heading to each area
-                heading_label = ClickableLabel(headings[i * 2 + j])
-                heading_label.setAlignment(Qt.AlignCenter)
-                heading_label.setStyleSheet("font-size: 10pt; background-color: lightgray")
-                heading_label.clicked.connect(self.handle_title_click)
-                area_layout.addWidget(heading_label)
-
-                # Add a table view to each area
-                table_view = QTableView()
-                table_view.setFont(QFont("Arial", 10))
-                area_layout.addWidget(table_view)
-
-                scroll_area.setWidget(area_widget)
-                scroll_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-                grid_layout.addWidget(scroll_area, i, j)
-
-                # Ensure the scroll area and its parent widgets are visible
-                scroll_area.setVisible(True)
-                area_widget.setVisible(True)
-
-                # Debug prints
-                print(f"Page 1: Added table view at position ({i}, {j})")
-
-                # Store reference to the budget and payment methods table views
-                if headings[i * 2 + j] == "Budget":
-                    self.table_view_budget_page_1 = table_view
-                elif headings[i * 2 + j] == "Payment Methods":
-                    self.table_view_payment_methods_page_1 = table_view
-                elif headings[i * 2 + j] == "Transaction Detail":
-                    self.table_view_transaction_detail_page_1 = table_view
-
-        # Set the grid layout to expand and fill the remaining space
-        grid_layout.setRowStretch(0, 1)
-        grid_layout.setRowStretch(1, 1)
-        grid_layout.setColumnStretch(0, 1)
-        grid_layout.setColumnStretch(1, 1)
-
-        return page_widget
-
-    def create_page_2(self):
-        page_widget = QWidget()
-        grid_layout = QGridLayout(page_widget)
-        grid_layout.setSpacing(0)  # Remove space between areas
-        headings = ["Budget", "Transaction Detail", "Analysis"]
-        positions = [(0, 0), (0, 1), (1, 1)]
-        
-        # Budget area (full height on the left)
-        scroll_area_budget = QScrollArea()
-        scroll_area_budget.setWidgetResizable(True)
-        area_widget_budget = QWidget()
-        area_layout_budget = QVBoxLayout(area_widget_budget)
-        area_layout_budget.setContentsMargins(0, 0, 0, 0)  # Remove margins
-        area_layout_budget.setSpacing(0)  # Remove space between widgets
-
-        heading_label_budget = ClickableLabel(headings[0])
-        heading_label_budget.setAlignment(Qt.AlignCenter)
-        heading_label_budget.setStyleSheet("font-size: 10pt; background-color: lightgray")
-        heading_label_budget.clicked.connect(self.handle_title_click)
-        area_layout_budget.addWidget(heading_label_budget)
-
-        self.table_view_budget_page_2 = QTableView()  # Ensure this is correctly initialized
-        self.table_view_budget_page_2.setFont(QFont("Arial", 10))
-        area_layout_budget.addWidget(self.table_view_budget_page_2)
-
-        scroll_area_budget.setWidget(area_widget_budget)
-        scroll_area_budget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        grid_layout.addWidget(scroll_area_budget, 0, 0, 2, 1)  # Span 2 rows
-
-        # Ensure the scroll area and its parent widgets are visible
-        scroll_area_budget.setVisible(True)
-        area_widget_budget.setVisible(True)
-
-        # Debug prints
-        print("Page 2: Added budget table view")
-
-        # Transaction Detail and Analysis (right side)
-        for index, (i, j) in enumerate(positions[1:]):
-            scroll_area = QScrollArea()
-            scroll_area.setWidgetResizable(True)
-            area_widget = QWidget()
-            area_layout = QVBoxLayout(area_widget)
-            area_layout.setContentsMargins(0, 0, 0, 0)  # Remove margins
-            area_layout.setSpacing(0)  # Remove space between widgets
-
-            heading_label = ClickableLabel(headings[index + 1])
-            heading_label.setAlignment(Qt.AlignCenter)
-            heading_label.setStyleSheet("font-size: 10pt; background-color: lightgray")
-            heading_label.clicked.connect(self.handle_title_click)
-            area_layout.addWidget(heading_label)
-
-            table_view = QTableView()
-            table_view.setFont(QFont("Arial", 10))
-            area_layout.addWidget(table_view)
-
-            scroll_area.setWidget(area_widget)
-            scroll_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-            grid_layout.addWidget(scroll_area, i, j)
-
-            # Ensure the scroll area and its parent widgets are visible
-            scroll_area.setVisible(True)
-            area_widget.setVisible(True)
-
-            # Debug prints
-            print(f"Page 2: Added table view at position ({i}, {j})")
-
-            # Store reference to the transaction detail table view
-            if headings[index + 1] == "Transaction Detail":
-                self.table_view_transaction_detail_page_2 = table_view
-
-        # Set the grid layout to expand and fill the remaining space
-        grid_layout.setRowStretch(0, 1)
-        grid_layout.setRowStretch(1, 1)
-        grid_layout.setColumnStretch(0, 1)
-        grid_layout.setColumnStretch(1, 1)
-
-        return page_widget
-
-    def create_page_3(self):
-        page_widget = QWidget()
-        grid_layout = QGridLayout(page_widget)
-        grid_layout.setSpacing(0)  # Remove space between areas
-        headings = ["Budget", "Payment Methods", "Transaction Detail"]
-        
-        # Budget (upper left)
-        scroll_area_budget = QScrollArea()
-        scroll_area_budget.setWidgetResizable(True)
-        area_widget_budget = QWidget()
-        area_layout_budget = QVBoxLayout(area_widget_budget)
-        area_layout_budget.setContentsMargins(0, 0, 0, 0)  # Remove margins
-        area_layout_budget.setSpacing(0)  # Remove space between widgets
-
-        heading_label_budget = ClickableLabel(headings[0])
-        heading_label_budget.setAlignment(Qt.AlignCenter)
-        heading_label_budget.setStyleSheet("font-size: 10pt; background-color: lightgray")
-        heading_label_budget.clicked.connect(self.handle_title_click)
-        area_layout_budget.addWidget(heading_label_budget)
-
-        self.table_view_budget_page_3 = QTableView()  # Ensure this is correctly initialized
-        self.table_view_budget_page_3.setFont(QFont("Arial", 10))
-        area_layout_budget.addWidget(self.table_view_budget_page_3)
-
-        scroll_area_budget.setWidget(area_widget_budget)
-        scroll_area_budget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        grid_layout.addWidget(scroll_area_budget, 0, 0)
-
-        # Ensure the scroll area and its parent widgets are visible
-        scroll_area_budget.setVisible(True)
-        area_widget_budget.setVisible(True)
-
-        # Debug prints
-        print("Page 3: Added budget table view")
-
-        # Payment Methods (lower left)
-        scroll_area_payment_methods = QScrollArea()
-        scroll_area_payment_methods.setWidgetResizable(True)
-        area_widget_payment_methods = QWidget()
-        area_layout_payment_methods = QVBoxLayout(area_widget_payment_methods)
-        area_layout_payment_methods.setContentsMargins(0, 0, 0, 0)  # Remove margins
-        area_layout_payment_methods.setSpacing(0)  # Remove space between widgets
-
-        heading_label_payment_methods = ClickableLabel(headings[1])
-        heading_label_payment_methods.setAlignment(Qt.AlignCenter)
-        heading_label_payment_methods.setStyleSheet("font-size: 10pt; background-color: lightgray")
-        heading_label_payment_methods.clicked.connect(self.handle_title_click)
-        area_layout_payment_methods.addWidget(heading_label_payment_methods)
-
-        self.table_view_payment_methods_page_3 = QTableView()  # Ensure this is correctly initialized
-        self.table_view_payment_methods_page_3.setFont(QFont("Arial", 10))
-        area_layout_payment_methods.addWidget(self.table_view_payment_methods_page_3)
-
-        scroll_area_payment_methods.setWidget(area_widget_payment_methods)
-        scroll_area_payment_methods.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        grid_layout.addWidget(scroll_area_payment_methods, 1, 0)
-
-        # Ensure the scroll area and its parent widgets are visible
-        scroll_area_payment_methods.setVisible(True)
-        area_widget_payment_methods.setVisible(True)
-
-        # Debug prints
-        print("Page 3: Added payment methods table view")
-
-        # Transaction Detail (full height on the right)
-        scroll_area_transaction = QScrollArea()
-        scroll_area_transaction.setWidgetResizable(True)
-        area_widget_transaction = QWidget()
-        area_layout_transaction = QVBoxLayout(area_widget_transaction)
-        area_layout_transaction.setContentsMargins(0, 0, 0, 0)  # Remove margins
-        area_layout_transaction.setSpacing(0)  # Remove space between widgets
-
-        heading_label_transaction = ClickableLabel(headings[2])
-        heading_label_transaction.setAlignment(Qt.AlignCenter)
-        heading_label_transaction.setStyleSheet("font-size: 10pt; background-color: lightgray")
-        heading_label_transaction.clicked.connect(self.handle_title_click)
-        area_layout_transaction.addWidget(heading_label_transaction)
-
-        table_view_transaction = QTableView()
-        table_view_transaction.setFont(QFont("Arial", 10))
-        area_layout_transaction.addWidget(table_view_transaction)
-
-        scroll_area_transaction.setWidget(area_widget_transaction)
-        scroll_area_transaction.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        grid_layout.addWidget(scroll_area_transaction, 0, 1, 2, 1)  # Span 2 rows
-
-        # Ensure the scroll area and its parent widgets are visible
-        scroll_area_transaction.setVisible(True)
-        area_widget_transaction.setVisible(True)
-
-        # Debug prints
-        print("Page 3: Added transaction detail table view")
-
-        # Set the grid layout to expand and fill the remaining space
-        grid_layout.setRowStretch(0, 1)
-        grid_layout.setRowStretch(1, 1)
-        grid_layout.setColumnStretch(0, 1)
-        grid_layout.setColumnStretch(1, 1)
-
-        return page_widget
-
-    def create_page_4(self):
-        page_widget = QWidget()
-        grid_layout = QGridLayout(page_widget)
-        grid_layout.setSpacing(0)  # Remove space between areas
-        headings = ["Budget", "Transaction Detail"]
-
-        for i in range(2):
-            scroll_area = QScrollArea()
-            scroll_area.setWidgetResizable(True)
-            area_widget = QWidget()
-            area_layout = QVBoxLayout(area_widget)
-            area_layout.setContentsMargins(0, 0, 0, 0)  # Remove margins
-            area_layout.setSpacing(0)  # Remove space between widgets
-
-            # Add heading to each area
-            heading_label = ClickableLabel(headings[i])
-            heading_label.setAlignment(Qt.AlignCenter)
-            heading_label.setStyleSheet("font-size: 10pt; background-color: lightgray")
-            heading_label.clicked.connect(self.handle_title_click)
-            area_layout.addWidget(heading_label)
-
-            # Add a table view to each area
-            table_view = QTableView()
-            table_view.setFont(QFont("Arial", 10))
-            area_layout.addWidget(table_view)
-
-            scroll_area.setWidget(area_widget)
-            scroll_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-            grid_layout.addWidget(scroll_area, 0, i)
-
-            # Ensure the scroll area and its parent widgets are visible
-            scroll_area.setVisible(True)
-            area_widget.setVisible(True)
-
-            # Debug prints
-            print(f"Page 4: Added table view at position (0, {i})")
-
-            # Store reference to the budget and transaction detail table views
-            if headings[i] == "Budget":
-                self.table_view_budget_page_4 = table_view
-            elif headings[i] == "Transaction Detail":
-                self.table_view_transaction_detail_page_4 = table_view
-
-        # Set the grid layout to expand and fill the remaining space
-        grid_layout.setRowStretch(0, 1)
-        grid_layout.setColumnStretch(0, 1)
-        grid_layout.setColumnStretch(1, 1)
-
-        return page_widget
+    def register_transaction_views(self):
+        try:
+            views = [
+                self.table_view_transaction_detail_page_1,
+                self.table_view_transaction_detail_page_2,
+                self.table_view_transaction_detail_page_3,
+                self.table_view_transaction_detail_page_4
+            ]
+            for view in views:
+                if view is not None:
+                    self.transaction_detail_logic.register_table_view(view)
+            print(f"Successfully registered {len(views)} transaction views")
+        except Exception as e:
+            print(f"Error registering transaction views: {e}")
 
     def handle_title_click(self):
         sender = self.sender()
         if sender is None:
-            print("Error: sender is None")
             return
 
         title = sender.text()
-        action = ""
-        if title == "Budget":
-            action = "1"
-        elif title == "Transaction Detail":
-            action = "2"
-        elif title == "Payment Methods":
-            action = "3"
-        elif title == "Analysis":
-            action = "4"
-        else:
-            return
+        action = {"Budget": "1", "Transaction Detail": "2", 
+                 "Payment Methods": "3", "Analysis": "4"}.get(title, "")
 
-        for rule in self.transition_rules:
-            if rule["from_page"] == str(self.current_page) and rule["clicked_area"] == action:
-                next_page = int(rule["to_page"])  # Convert to integer
-                self.stacked_widget.setCurrentIndex(next_page - 1)
-                self.current_page = next_page
-                break
+        if action:
+            for rule in self.transition_rules:
+                if (rule["from_page"] == str(self.current_page) and 
+                    rule["clicked_area"] == action):
+                    next_page = int(rule["to_page"])
+                    self.stacked_widget.setCurrentIndex(next_page - 1)
+                    self.current_page = next_page
+                    break
 
     @Slot(bool)
     def handle_area_expansion(self, expanded):
         print(f"Area expanded: {expanded}")
-        # Restart the logic here based on the expanded state
         self.restart_logic(expanded)
 
     def restart_logic(self, expanded):
-        # Load budget data based on the expanded state
-        df = self.budget_logic.load_budget_data(expanded)
-        print("Data loaded in restart_logic:", df)  # Debug print
-
-        # Display budget data on all relevant pages
-        self.budget_logic.display_budget_data(df, self.table_view_budget_page_1)
-        self.budget_logic.display_budget_data(df, self.table_view_budget_page_2)
-        self.budget_logic.display_budget_data(df, self.table_view_budget_page_3)
-        self.budget_logic.display_budget_data(df, self.table_view_budget_page_4)
-
-        # Load and display payment methods data on pages 1 and 3
-        df_payment_methods = self.payment_methods_logic.load_payment_methods_data()
-        self.payment_methods_logic.display_payment_methods_data(df_payment_methods, self.table_view_payment_methods_page_1)
-        self.payment_methods_logic.display_payment_methods_data(df_payment_methods, self.table_view_payment_methods_page_3)
-            
-        # Add transaction detail loading and display
         try:
+            # Load and display budget data
+            df = self.budget_logic.load_budget_data(expanded)
+            
+            budget_views = [
+                self.table_view_budget_page_1,
+                self.table_view_budget_page_2,
+                self.table_view_budget_page_3,
+                self.table_view_budget_page_4
+            ]
+            for view in budget_views:
+                self.budget_logic.display_budget_data(df, view)
+
+            # Load and display payment methods
+            df_payment_methods = self.payment_methods_logic.load_payment_methods_data()
+            self.payment_methods_logic.display_payment_methods_data(
+                df_payment_methods, self.table_view_payment_methods_page_1)
+            self.payment_methods_logic.display_payment_methods_data(
+                df_payment_methods, self.table_view_payment_methods_page_3)
+            
+            # Load and display transaction details
             df_transaction = self.transaction_detail_logic.load_transaction_detail_data()
-            self.transaction_detail_logic.display_transaction_detail_data(df_transaction, self.table_view_transaction_detail_page_1)
-            self.transaction_detail_logic.display_transaction_detail_data(df_transaction, self.table_view_transaction_detail_page_2)
-            self.transaction_detail_logic.display_transaction_detail_data(df_transaction, self.table_view_transaction_detail_page_3)
-            self.transaction_detail_logic.display_transaction_detail_data(df_transaction, self.table_view_transaction_detail_page_4)
+            for view in self.transaction_detail_logic._current_table_views:
+                self.transaction_detail_logic.display_transaction_detail_data(
+                    df_transaction, view)
 
         except Exception as e:
-            print(f"Error loading transaction details: {e}")
-
+            print(f"Error in restart_logic: {e}")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = NewMainWindow()
     window.show()
-    sys.exit(app.exec())    
+    sys.exit(app.exec())
