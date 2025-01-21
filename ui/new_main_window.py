@@ -29,7 +29,7 @@ class NewMainWindow(QMainWindow):
         # Initialize logic components
         self.transaction_detail_logic = TransactionDetailLogic(self.db_handler)
         self.budget_logic = BudgetLogic(self.db_handler, self.transaction_detail_logic)
-        self.payment_methods_logic = PaymentMethodsLogic(self.db_handler)
+        self.payment_methods_logic = PaymentMethodsLogic(self.db_handler, self.transaction_detail_logic)
 
         # Initialize page creator
         self.page_creator = PageCreator(self)

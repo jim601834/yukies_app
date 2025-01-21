@@ -1,3 +1,4 @@
+
 import pandas as pd
 from PySide6.QtCore import Signal, QObject
 from PySide6.QtGui import QStandardItemModel, QStandardItem, QFont
@@ -26,7 +27,7 @@ class BudgetLogic:
         df = df.sort_values(by='display_order').reset_index(drop=True)
         df = df[['category', 'amount', 'spent', 'remaining']]
 
-        # Set table font
+        # Set consistent font size
         table_font = QFont("Arial", 10)
         table_view.setFont(table_font)
 
@@ -37,7 +38,6 @@ class BudgetLogic:
         header = table_view.horizontalHeader()
         header.setFont(table_font)
 
-        # Populate table with data
         for row in df.itertuples(index=False):
             items = []
             for field in row:
@@ -46,29 +46,22 @@ class BudgetLogic:
                 items.append(item)
             model.appendRow(items)
 
-        # Store model reference and connect click handler
+        # Store model and connect click handler
         self._current_model = model
         table_view.clicked.connect(self.handle_row_click)
 
         table_view.setModel(model)
         table_view.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-
-        # Set column widths
-        category_column_index = df.columns.get_loc('category')
-        table_view.horizontalHeader().resizeSection(category_column_index, 200)
-
-        # Ensure visibility
-        table_view.setVisible(True)
-        table_view.resizeColumnsToContents()
-        table_view.resizeRowsToContents()
-        table_view.show()
-
-        # Ensure parent visibility
-        parent_widget = table_view.parentWidget()
-        while parent_widget:
-            parent_widget.setVisible(True)
-            parent_widget = parent_widget.parentWidget()
+        table_view.horizontalHeader().resizeSection(0, 200)
 
     def handle_row_click(self, index):
+        # Get clicked category
         category = self._current_model.item(index.row(), 0).text()
+        
+        # If subcategory, get parent category
+        if category.startswith('|---'):
+            category = category.split('|---')[1].strip()
+            category = category.split(' ')[0]
+        
+        print(f"Budget: Emitting category_selected signal with category: {category}")
         self.signals.category_selected.emit(category)
