@@ -1,9 +1,20 @@
 import pandas as pd
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text, Table, Column, Integer, String, Date, DateTime, MetaData
+from sqlalchemy.orm import sessionmaker
+from contextlib import contextmanager
 
 class DBHandler:
     def __init__(self, db_url):
         self.engine = create_engine(db_url)
+        self.Session = sessionmaker(bind=self.engine)
+        self.metadata = MetaData(schema='new_schema')  # Specify the schema
+        self.persistent_state = Table(
+            'persistent_state', self.metadata,
+            Column('id', Integer, primary_key=True),
+            Column('state_key', String(255), unique=True, nullable=False),
+            Column('state_value', Date),
+            Column('last_updated', DateTime)
+        )
 
     def get_connection(self):
         return self.engine.connect()
@@ -19,3 +30,16 @@ class DBHandler:
         except Exception as e:
             print(f"Database error: {e}")
             return pd.DataFrame()
+
+    @contextmanager
+    def session_scope(self):
+        """Provide a transactional scope around a series of operations."""
+        session = self.Session()
+        try:
+            yield session
+            session.commit()
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()

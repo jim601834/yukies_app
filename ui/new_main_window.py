@@ -9,6 +9,7 @@ from .page_definitions import PageCreator
 from ..logic.budget_logic import BudgetLogic
 from ..logic.payment_methods_logic import PaymentMethodsLogic
 from ..logic.transaction_detail_logic import TransactionDetailLogic
+from ..logic.end_of_month_logic import EndOfMonthLogic  # Import EndOfMonthLogic
 from ..database.db_handler import DBHandler
 
 def load_transition_rules(filepath):
@@ -30,6 +31,10 @@ class NewMainWindow(QMainWindow):
         self.transaction_detail_logic = TransactionDetailLogic(self.db_handler)
         self.budget_logic = BudgetLogic(self.db_handler, self.transaction_detail_logic)
         self.payment_methods_logic = PaymentMethodsLogic(self.db_handler, self.transaction_detail_logic)
+        self.end_of_month_logic = EndOfMonthLogic(self.db_handler)  # Instantiate EndOfMonthLogic
+
+        # Perform end-of-month check
+        self.end_of_month_logic.check_and_update_current_month()
 
         # Initialize page creator
         self.page_creator = PageCreator(self)
@@ -56,7 +61,7 @@ class NewMainWindow(QMainWindow):
         control_data_layout = QHBoxLayout()
         self.main_layout.addLayout(control_data_layout)
 
-        self.app_control_widget = AppControlWidget()
+        self.app_control_widget = AppControlWidget(self.db_handler)  # Pass db_handler
         control_data_layout.addWidget(self.app_control_widget)
         
         self.data_entry_widget = DataEntryWidget()

@@ -1,8 +1,9 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QSpacerItem, QSizePolicy
 
 class AppControlWidget(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, db_handler, parent=None):
         super(AppControlWidget, self).__init__(parent)
+        self.db_handler = db_handler
         self.initUI()
 
     def initUI(self):
