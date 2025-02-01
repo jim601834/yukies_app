@@ -16,7 +16,8 @@ class EndOfMonthLogic:
 
             if result:
                 last_updated = result[0]
-                if last_updated and last_updated >= current_month_start:
+                # Convert last_updated to date for comparison
+                if last_updated and last_updated.date() >= current_month_start:
                     print("Debug: Current month is up to date")
                 else:
                     print("Debug: Invoking end of month processing")

@@ -38,8 +38,13 @@ class PaymentMethodsLogic:
         query = """
             SELECT 
                 card_name as "Account",
-                statement_balance as "Statement",
-                current_balance as "Current",
+                CASE 
+                    WHEN type = 'Asset' THEN 'Check'
+                    WHEN type = 'Liability' THEN 'Card'
+                    ELSE type
+                END as "Type",
+                CASE WHEN type = 'check' THEN NULL ELSE statement_balance END as "Statement",
+                CASE WHEN type = 'check' THEN NULL ELSE current_balance END as "Current",
                 monthly_balance as "Monthly",
                 closing_date as "Closing",
                 payment_date as "Due"
@@ -69,7 +74,7 @@ class PaymentMethodsLogic:
                 item = QStandardItem()
                 
                 if df.columns[col] in ["Statement", "Current", "Monthly"]:
-                    item.setText(f"${field:,.2f}" if field else "$0.00")
+                    item.setText(f"${field:,.2f}" if field is not None else "")
                     item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
                 elif df.columns[col] in ["Closing", "Due"]:
                     item.setText(field.strftime('%Y-%m-%d') if field else "")
@@ -88,12 +93,15 @@ class PaymentMethodsLogic:
         table_view.setModel(model)
 
         header.setSectionResizeMode(0, QHeaderView.Interactive)
-        header.resizeSection(0, 150)  # Account column
+        header.resizeSection(0, 110)  # Account column (4 characters narrower)
         
         for i in range(1, len(df.columns)):
-            if df.columns[i] in ["Statement", "Current", "Monthly"]:
+            if df.columns[i] == "Type":
                 header.setSectionResizeMode(i, QHeaderView.Interactive)
-                header.resizeSection(i, 100)  # Currency columns
+                header.resizeSection(i, 64)  # Type column (2 characters wider)
+            elif df.columns[i] in ["Statement", "Current", "Monthly"]:
+                header.setSectionResizeMode(i, QHeaderView.Interactive)
+                header.resizeSection(i, 80)  # Currency columns (2 characters narrower)
             else:
                 header.setSectionResizeMode(i, QHeaderView.Interactive)
                 header.resizeSection(i, 80)   # Date columns
