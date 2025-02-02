@@ -42,7 +42,7 @@ class TransactionDetailLogic:
         if payment_method:
             conditions.append(f"from__account = '{payment_method}'")
             print(f"Added payment filter: from__account = '{payment_method}'")
-        elif category and category.lower() != 'total':
+        if category and category.lower() != 'total':
             conditions.append(f"category = '{category}'")
             print(f"Added category filter: category = '{category}'")
         
@@ -83,10 +83,13 @@ class TransactionDetailLogic:
             header.setSectionResizeMode(0, QHeaderView.Stretch)
             return
 
+        # Capitalize the first letter of each column name for display
+        display_columns = [col.capitalize() for col in df.columns]
+
         table_font = QFont("Arial", 10)
         table_view.setFont(table_font)
         model = QStandardItemModel()
-        model.setHorizontalHeaderLabels(df.columns)
+        model.setHorizontalHeaderLabels(display_columns)
         header = table_view.horizontalHeader()
         header.setFont(table_font)
 
@@ -103,7 +106,7 @@ class TransactionDetailLogic:
                     item.setText('✓' if bool(value) else '')
                     item.setTextAlignment(Qt.AlignCenter)
                 elif df.columns[col] == 'date':
-                    item.setText(value.strftime('%Y-%m-%d'))
+                    item.setText(value.strftime('%m/%d/%y'))
                     item.setTextAlignment(Qt.AlignCenter)
                 else:
                     item.setText(str(value))
@@ -116,9 +119,9 @@ class TransactionDetailLogic:
 
         table_view.setModel(model)
         
-        header.setSectionResizeMode(0, QHeaderView.Interactive)  # date
+        header.setSectionResizeMode(0, QHeaderView.Interactive)  # Date
         header.resizeSection(0, 100)
-        header.setSectionResizeMode(1, QHeaderView.Interactive)  # t_code
+        header.setSectionResizeMode(1, QHeaderView.Interactive)  # T_code
         header.resizeSection(1, 80)
         
         for i in range(2, df.shape[1]):

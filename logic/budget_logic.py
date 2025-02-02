@@ -1,4 +1,3 @@
-
 import pandas as pd
 from PySide6.QtCore import Signal, QObject
 from PySide6.QtGui import QStandardItemModel, QStandardItem, QFont
@@ -26,6 +25,9 @@ class BudgetLogic:
         df = df[['category', 'amount', 'spent', 'remaining', 'display_order']]
         df = df.sort_values(by='display_order').reset_index(drop=True)
         df = df[['category', 'amount', 'spent', 'remaining']]
+
+        # Capitalize the first letter of each column name
+        df.columns = [col.capitalize() for col in df.columns]
 
         # Set consistent font size
         table_font = QFont("Arial", 10)

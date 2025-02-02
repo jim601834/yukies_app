@@ -59,6 +59,9 @@ class PaymentMethodsLogic:
             print("No payment methods data to display")
             return
 
+        # Capitalize the first letter of each column name
+        df.columns = [col.capitalize() for col in df.columns]
+
         table_font = QFont("Arial", 10)
         table_view.setFont(table_font)
 
@@ -77,7 +80,7 @@ class PaymentMethodsLogic:
                     item.setText(f"${field:,.2f}" if field is not None else "")
                     item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
                 elif df.columns[col] in ["Closing", "Due"]:
-                    item.setText(field.strftime('%Y-%m-%d') if field else "")
+                    item.setText(field.strftime('%m/%d/%y') if field else "")
                     item.setTextAlignment(Qt.AlignCenter)
                 else:
                     item.setText(str(field) if field else "")
