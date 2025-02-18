@@ -8,19 +8,23 @@ sys.path.append(parent_dir)
 from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QScrollArea, QGridLayout, QLabel, QTableView
 from PySide6.QtCore import Qt
 from yukies_app.ui.data_entry_widget import DataEntryWidget  # Use absolute import
+from yukies_app.database.db_handler import DBHandler  # Import DBHandler
 
 class NewMainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("New Main Window")
 
+        # Initialize DBHandler with the actual PostgreSQL database URL
+        self.db_handler = DBHandler("postgresql://postgres:sasuke@localhost:5433/yukies_db")
+
         # Create central widget
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         layout = QVBoxLayout(central_widget)
 
-        # Create and add the data entry widget with reduced fixed height
-        self.data_entry_widget = DataEntryWidget()
+        # Create and add the data entry widget with db_handler
+        self.data_entry_widget = DataEntryWidget(self.db_handler)
         layout.addWidget(self.data_entry_widget)
 
         # Create a grid layout for the scrollable areas
