@@ -6,6 +6,8 @@ from ..logic.data_entry_logic import DataEntryLogic  # Import the DataEntryLogic
 class DataEntryWidget(QWidget):
     submit_data = Signal(dict)  # Custom signal to submit data
     function_button_clicked = Signal(str)  # Signal to communicate function button clicks
+    cb1_account_selected = Signal(dict)  # Signal to communicate cb1 account selection
+    submit_button_clicked = Signal(dict)  # Signal to communicate submit button click
 
     def __init__(self, db_handler):
         super().__init__()
@@ -14,6 +16,9 @@ class DataEntryWidget(QWidget):
         # Connect signals
         self.logic.combo_box_data_loaded.connect(self.on_combo_box_data_loaded)
         self.function_button_clicked.connect(self.logic.process_function_button)
+        self.cb1_account_selected.connect(self.logic.cb1_account_selected)
+        self.submit_button_clicked.connect(self.logic.submit_button_logic)  # Connect submit button signal
+        self.logic.tax_checkbox_update.connect(self.update_tax_checkbox)  # Connect tax checkbox update signal
 
         # Set background color for the data entry widget
         self.setStyleSheet("background-color: lightgray;")
@@ -91,6 +96,7 @@ class DataEntryWidget(QWidget):
         self.cb1.setFixedHeight(32)
         self.cb1.setEnabled(False)
         self.cb1.setStyleSheet("background-color: lightgray; color: gray;")
+        self.cb1.currentIndexChanged.connect(self.on_cb1_account_selected)  # Connect signal
         input_layout.addWidget(self.cb1)
 
         # Spacer between "cb1" and "cb2" combo boxes
@@ -223,23 +229,39 @@ class DataEntryWidget(QWidget):
         print(f"Emitting signal for function button: {t_code}")
         self.function_button_clicked.emit(t_code)
 
+    def on_cb1_account_selected(self):
+        # Emit signal when an account is selected in cb1
+        account_name = self.cb1.currentText()
+        t_code = self.active_button.text().lower() if self.active_button else ""
+        data = {'t_code': t_code, 'account_name': account_name}
+        print(f"Emitting signal for cb1 account selected: {data}")
+        self.cb1_account_selected.emit(data)
+
     def on_combo_box_data_loaded(self, to_accounts, from_accounts, cb1_placeholder, cb2_placeholder):
         print("Received signal to load combo box data")
         self.cb1.addItem(cb1_placeholder)
         self.cb2.addItem(cb2_placeholder)
         self.cb1.addItems(sorted(to_accounts))
         self.cb2.addItems(sorted(from_accounts))
+        if from_accounts:
+            self.cb2.setCurrentText(from_accounts[0])  # Set default value for cb2
+
+    def update_tax_checkbox(self, checked):
+        print(f"Updating tax checkbox to: {checked}")
+        self.tax_checkbox.setChecked(checked)
 
     def on_submit_button_clicked(self):
+        t_code = self.active_button.text().lower() if self.active_button else ""
         data = {
+            't_code': t_code,
             'date': self.date_combo_box.date().toString("yyyy-MM-dd"),
-            'to_account': self.cb1.currentText(),
-            'from_account': self.cb2.currentText(),
+            'cb1': self.cb1.currentText(),
+            'cb2': self.cb2.currentText(),
             'amount': self.amount_input.text(),
             'comment': self.comment_input.text(),
             'tax': self.tax_checkbox.isChecked()
         }
-        self.submit_data.emit(data)  # Emit the custom signal with the data
+        self.submit_button_clicked.emit(data)  # Emit the custom signal with the data
 
         # Reset the style of the active button
         if self.active_button:
