@@ -261,6 +261,7 @@ class DataEntryWidget(QWidget):
             'comment': self.comment_input.text(),
             'tax': self.tax_checkbox.isChecked()
         }
+        print(f"Emitting submit button clicked signal with data: {data}")  # Add print statement
         self.submit_button_clicked.emit(data)  # Emit the custom signal with the data
 
         # Reset the style of the active button
