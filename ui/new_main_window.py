@@ -64,7 +64,7 @@ class NewMainWindow(QMainWindow):
         self.app_control_widget = AppControlWidget(self.db_handler)  # Pass db_handler
         control_data_layout.addWidget(self.app_control_widget)
         
-        self.data_entry_widget = DataEntryWidget()
+        self.data_entry_widget = DataEntryWidget(self.db_handler)  # Pass db_handler
         control_data_layout.addWidget(self.data_entry_widget)
 
         # Stacked widget for pages

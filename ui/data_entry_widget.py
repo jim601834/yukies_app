@@ -1,12 +1,19 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, QComboBox, QCheckBox, QSpacerItem, QSizePolicy, QLabel, QDateEdit
 from PySide6.QtGui import QDoubleValidator
 from PySide6.QtCore import QDate, Signal
+from ..logic.data_entry_logic import DataEntryLogic  # Import the DataEntryLogic class
 
 class DataEntryWidget(QWidget):
     submit_data = Signal(dict)  # Custom signal to submit data
+    function_button_clicked = Signal(str)  # Signal to communicate function button clicks
 
-    def __init__(self):
+    def __init__(self, db_handler):
         super().__init__()
+        self.logic = DataEntryLogic(db_handler)  # Initialize DataEntryLogic
+
+        # Connect signals
+        self.logic.combo_box_data_loaded.connect(self.on_combo_box_data_loaded)
+        self.function_button_clicked.connect(self.logic.process_function_button)
 
         # Set background color for the data entry widget
         self.setStyleSheet("background-color: lightgray;")
@@ -26,7 +33,6 @@ class DataEntryWidget(QWidget):
         input_layout.setContentsMargins(0, 0, 0, 0)
         input_layout.setSpacing(5)
 
-        # Remove "Reset" and "Maintain" buttons
         # "Refund" button
         self.refund_button = QPushButton("Refund")
         self.refund_button.setStyleSheet("background-color: lightcyan; font-size: 10pt;")
@@ -74,33 +80,33 @@ class DataEntryWidget(QWidget):
         self.date_combo_box.setDate(QDate.currentDate())
         input_layout.addWidget(self.date_combo_box)
 
-        # Spacer between "Date" and "To" combo boxes
+        # Spacer between "Date" and "cb1" combo boxes
         spacer2 = QSpacerItem(10, 10, QSizePolicy.Minimum, QSizePolicy.Fixed)
         input_layout.addSpacerItem(spacer2)
 
-        # "To" combo box
-        self.combo_box_to = QComboBox()
-        self.combo_box_to.setEditable(True)
-        self.combo_box_to.setFixedWidth(160)
-        self.combo_box_to.setFixedHeight(32)
-        self.combo_box_to.setEnabled(False)
-        self.combo_box_to.setStyleSheet("background-color: lightgray; color: gray;")
-        input_layout.addWidget(self.combo_box_to)
+        # "cb1" combo box
+        self.cb1 = QComboBox()
+        self.cb1.setEditable(True)
+        self.cb1.setFixedWidth(160)
+        self.cb1.setFixedHeight(32)
+        self.cb1.setEnabled(False)
+        self.cb1.setStyleSheet("background-color: lightgray; color: gray;")
+        input_layout.addWidget(self.cb1)
 
-        # Spacer between "To" and "From" combo boxes
+        # Spacer between "cb1" and "cb2" combo boxes
         spacer3 = QSpacerItem(10, 10, QSizePolicy.Minimum, QSizePolicy.Fixed)
         input_layout.addSpacerItem(spacer3)
 
-        # "From" combo box
-        self.combo_box_from = QComboBox()
-        self.combo_box_from.setEditable(True)
-        self.combo_box_from.setFixedWidth(160)
-        self.combo_box_from.setFixedHeight(32)
-        self.combo_box_from.setEnabled(False)
-        self.combo_box_from.setStyleSheet("background-color: lightgray; color: gray;")
-        input_layout.addWidget(self.combo_box_from)
+        # "cb2" combo box
+        self.cb2 = QComboBox()
+        self.cb2.setEditable(True)
+        self.cb2.setFixedWidth(160)
+        self.cb2.setFixedHeight(32)
+        self.cb2.setEnabled(False)
+        self.cb2.setStyleSheet("background-color: lightgray; color: gray;")
+        input_layout.addWidget(self.cb2)
 
-        # Spacer between "From" and "Amount" fields
+        # Spacer between "cb2" and "Amount" fields
         spacer4 = QSpacerItem(20, 10, QSizePolicy.Minimum, QSizePolicy.Fixed)
         input_layout.addSpacerItem(spacer4)
 
@@ -174,12 +180,10 @@ class DataEntryWidget(QWidget):
         self.set_initial_state()
 
     def set_initial_state(self):
-        self.combo_box_to.clear()
-        self.combo_box_from.clear()
-        self.combo_box_to.addItem("Enter To Account")
-        self.combo_box_from.addItem("Enter From Account")
-        self.combo_box_to.lineEdit().setStyleSheet("color: gray")
-        self.combo_box_from.lineEdit().setStyleSheet("color: gray")
+        self.cb1.clear()
+        self.cb2.clear()
+        self.cb1.lineEdit().setStyleSheet("color: gray")
+        self.cb2.lineEdit().setStyleSheet("color: gray")
         self.amount_input.setPlaceholderText("$0000.00")
         self.comment_input.setPlaceholderText("Purpose/Comment")
         self.amount_input.setStyleSheet("background-color: lightgray; color: gray;")
@@ -188,42 +192,16 @@ class DataEntryWidget(QWidget):
         self.comment_input.setEnabled(False)
 
     def enable_combo_boxes_and_inputs(self):
-        self.combo_box_to.setEnabled(True)
-        self.combo_box_from.setEnabled(True)
+        self.cb1.setEnabled(True)
+        self.cb2.setEnabled(True)
         self.amount_input.setEnabled(True)
         self.comment_input.setEnabled(True)
-        self.combo_box_to.setStyleSheet("background-color: white; color: gray;")
-        self.combo_box_from.setStyleSheet("background-color: white; color: gray;")
-        self.amount_input.setStyleSheet("background-color: white; color: gray;")
-        self.comment_input.setStyleSheet("background-color: white; color: gray;")
-        self.combo_box_to.clear()
-        self.combo_box_from.clear()
-        self.combo_box_to.addItem("Select 'To' Account")
-        self.combo_box_from.addItem("Select 'From' Account")
-        self.amount_input.setPlaceholderText("1000.00")
-        self.comment_input.setPlaceholderText("Purpose/Comment")
-
-    def load_combo_box_data(self, t_code):
-        # Placeholder for loading data from the database
-        # Replace this with actual database queries to load data into the combo boxes
-        to_view = f"{t_code}_to_view"
-        from_view = f"{t_code}_from_view"
-
-        # Example data loading (replace with actual database queries)
-        to_accounts = self.fetch_data_from_view(to_view)
-        from_accounts = self.fetch_data_from_view(from_view)
-
-        self.combo_box_to.addItems(to_accounts)
-        self.combo_box_from.addItems(from_accounts)
-
-    def fetch_data_from_view(self, view_name):
-        # Placeholder method to fetch data from the database view
-        # Replace this with actual database queries
-        # Example:
-        # query = f"SELECT account_name FROM {view_name}"
-        # result = execute_query(query)
-        # return [row['account_name'] for row in result]
-        return ["Account1", "Account2", "Account3"]  # Example data
+        self.cb1.setStyleSheet("background-color: white; color: black;")
+        self.cb2.setStyleSheet("background-color: white; color: black;")
+        self.amount_input.setStyleSheet("background-color: white; color: black;")
+        self.comment_input.setStyleSheet("background-color: white; color: black;")
+        self.cb1.clear()
+        self.cb2.clear()
 
     def on_function_button_clicked(self):
         # Reset the style of the previously active button
@@ -235,22 +213,28 @@ class DataEntryWidget(QWidget):
         self.active_button.default_style = self.active_button.styleSheet()
         self.active_button.setStyleSheet("background-color: yellow; font-size: 10pt;")
 
-        print(f"{self.active_button.text()} button clicked")
-
         # Determine t_code based on the button text
         t_code = self.active_button.text().lower()
 
         # Enable combo boxes and input fields with placeholders
         self.enable_combo_boxes_and_inputs()
 
-        # Load combo box data based on t_code
-        self.load_combo_box_data(t_code)
+        # Emit signal to process function button
+        print(f"Emitting signal for function button: {t_code}")
+        self.function_button_clicked.emit(t_code)
+
+    def on_combo_box_data_loaded(self, to_accounts, from_accounts, cb1_placeholder, cb2_placeholder):
+        print("Received signal to load combo box data")
+        self.cb1.addItem(cb1_placeholder)
+        self.cb2.addItem(cb2_placeholder)
+        self.cb1.addItems(sorted(to_accounts))
+        self.cb2.addItems(sorted(from_accounts))
 
     def on_submit_button_clicked(self):
         data = {
             'date': self.date_combo_box.date().toString("yyyy-MM-dd"),
-            'to_account': self.combo_box_to.currentText(),
-            'from_account': self.combo_box_from.currentText(),
+            'to_account': self.cb1.currentText(),
+            'from_account': self.cb2.currentText(),
             'amount': self.amount_input.text(),
             'comment': self.comment_input.text(),
             'tax': self.tax_checkbox.isChecked()
@@ -265,8 +249,8 @@ class DataEntryWidget(QWidget):
     def on_reset_button_clicked(self):
         # Reset all input fields and combo boxes
         self.date_combo_box.setDate(QDate.currentDate())
-        self.combo_box_to.setCurrentIndex(0)
-        self.combo_box_from.setCurrentIndex(0)
+        self.cb1.setCurrentIndex(0)
+        self.cb2.setCurrentIndex(0)
         self.amount_input.clear()
         self.comment_input.clear()
         self.tax_checkbox.setChecked(False)
