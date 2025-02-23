@@ -33,9 +33,6 @@ class NewMainWindow(QMainWindow):
         self.payment_methods_logic = PaymentMethodsLogic(self.db_handler, self.transaction_detail_logic)
         self.end_of_month_logic = EndOfMonthLogic(self.db_handler)  # Instantiate EndOfMonthLogic
 
-        # Perform end-of-month check
-        self.end_of_month_logic.check_and_update_current_month()
-
         # Initialize page creator
         self.page_creator = PageCreator(self)
 
@@ -46,11 +43,16 @@ class NewMainWindow(QMainWindow):
         # Create UI components
         self.setup_ui()
         
-        # Register views and load data
+        # Register views
         self.register_transaction_views()
-        self.restart_logic(expanded=False)
+        
+        # Perform startup tasks
+        self.perform_startup_tasks()
         
         self.showMaximized()
+
+        # Connect restart signal from DataEntryLogic to the slot
+        self.data_entry_widget.logic.restart_app_signal.connect(self.handle_restart_signal)
 
     def setup_ui(self):
         central_widget = QWidget()
@@ -126,8 +128,23 @@ class NewMainWindow(QMainWindow):
         print(f"Area expanded: {expanded}")
         self.restart_logic(expanded)
 
+    def perform_startup_tasks(self):
+        # Load and display initial data
+        self.restart_logic(expanded=False)
+
+    @Slot()
+    def handle_restart_signal(self):
+        print("Received restart signal")
+        self.restart_logic(expanded=False)
+
     def restart_logic(self, expanded):
         try:
+            # Perform end-of-month check
+            self.end_of_month_logic.check_and_update_current_month()
+
+            # Reset DataEntryWidget UI
+            self.data_entry_widget.reset_ui()
+
             # Load and display budget data
             df = self.budget_logic.load_budget_data(expanded)
             

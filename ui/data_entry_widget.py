@@ -11,13 +11,12 @@ class DataEntryWidget(QWidget):
 
     def __init__(self, db_handler):
         super().__init__()
-        self.logic = DataEntryLogic(db_handler)  # Initialize DataEntryLogic
+        self.logic = DataEntryLogic(db_handler, self)  # Initialize DataEntryLogic
 
         # Connect signals
-        self.logic.combo_box_data_loaded.connect(self.on_combo_box_data_loaded)
         self.function_button_clicked.connect(self.logic.process_function_button)
         self.cb1_account_selected.connect(self.logic.cb1_account_selected)
-        self.submit_button_clicked.connect(self.logic.submit_button_logic)  # Connect submit button signal
+        self.submit_button_clicked.connect(self.logic.submit_button_logic)
         self.logic.tax_checkbox_update.connect(self.update_tax_checkbox)  # Connect tax checkbox update signal
 
         # Set background color for the data entry widget
@@ -226,28 +225,43 @@ class DataEntryWidget(QWidget):
         self.enable_combo_boxes_and_inputs()
 
         # Emit signal to process function button
-        print(f"Emitting signal for function button: {t_code}")
+        print(f"on_function_button_clicked: Emitting signal for function button: {t_code}")
         self.function_button_clicked.emit(t_code)
 
     def on_cb1_account_selected(self):
-        # Emit signal when an account is selected in cb1
-        account_name = self.cb1.currentText()
-        t_code = self.active_button.text().lower() if self.active_button else ""
-        data = {'t_code': t_code, 'account_name': account_name}
-        print(f"Emitting signal for cb1 account selected: {data}")
-        self.cb1_account_selected.emit(data)
+        # Emit signal only when an actual selection is made in cb1
+        if self.cb1.currentIndex() > 0:
+            account_name = self.cb1.currentText()
+            t_code = self.active_button.text().lower() if self.active_button else ""
+            data = {'t_code': t_code, 'account_name': account_name}
+            print(f"on_cb1_account_selected: Emitting signal for cb1 account selected: {data}")
+            self.cb1_account_selected.emit(data)
 
-    def on_combo_box_data_loaded(self, to_accounts, from_accounts, cb1_placeholder, cb2_placeholder):
-        print("Received signal to load combo box data")
-        self.cb1.addItem(cb1_placeholder)
-        self.cb2.addItem(cb2_placeholder)
+    def update_combo_boxes(self, to_accounts, from_accounts, cb1_placeholder, cb2_placeholder):
+        print("update_combo_boxes: Received signal to load combo box data")
+        self.cb1.clear()
+        self.cb2.clear()
         self.cb1.addItems(sorted(to_accounts))
         self.cb2.addItems(sorted(from_accounts))
-        if from_accounts:
-            self.cb2.setCurrentText(from_accounts[0])  # Set default value for cb2
+        self.cb1.lineEdit().setPlaceholderText(cb1_placeholder)
+        self.cb2.lineEdit().setPlaceholderText(cb2_placeholder)
+        self.cb1.setCurrentIndex(-1)  # Ensure placeholder is shown
+        self.cb2.setCurrentIndex(-1)  # Ensure placeholder is shown
+
+        # Enable and style the combo boxes
+        self.cb1.setEnabled(True)
+        self.cb2.setEnabled(True)
+        self.cb1.setStyleSheet("background-color: white; color: black;")
+        self.cb2.setStyleSheet("background-color: white; color: black;")
+
+    def set_cb2_default(self, default_item):
+        print(f"set_cb2_default: Setting cb2 default item to: {default_item}")
+        index = self.cb2.findText(default_item)
+        if index >= 0:
+            self.cb2.setCurrentIndex(index)
 
     def update_tax_checkbox(self, checked):
-        print(f"Updating tax checkbox to: {checked}")
+        print(f"update_tax_checkbox: Updating tax checkbox to: {checked}")
         self.tax_checkbox.setChecked(checked)
 
     def on_submit_button_clicked(self):
@@ -261,7 +275,7 @@ class DataEntryWidget(QWidget):
             'comment': self.comment_input.text(),
             'tax': self.tax_checkbox.isChecked()
         }
-        print(f"Emitting submit button clicked signal with data: {data}")  # Add print statement
+        print(f"on_submit_button_clicked: Emitting submit button clicked signal with data: {data}")
         self.submit_button_clicked.emit(data)  # Emit the custom signal with the data
 
         # Reset the style of the active button
@@ -283,4 +297,14 @@ class DataEntryWidget(QWidget):
             self.active_button.setStyleSheet(self.active_button.default_style)
             self.active_button = None
 
-        print("Reset button clicked")
+        print("on_reset_button_clicked: Reset button clicked")
+
+    def reset_ui(self):
+        self.set_initial_state()
+        self.date_combo_box.setDate(QDate.currentDate())
+        self.cb1.setCurrentIndex(0)
+        self.cb2.setCurrentIndex(0)
+        self.amount_input.clear()
+        self.comment_input.clear()
+        self.tax_checkbox.setChecked(False)
+        print("reset_ui: DataEntryWidget UI reset to initial state")
