@@ -25,21 +25,21 @@ class DataEntryLogic(QObject):
 
     def load_combo_box_data(self, t_code):
         if t_code == "refund":
-            to_view = "refund_to_view"
             from_view = "refund_from_view"
+            to_view = "refund_to_view"
             cb1_placeholder = "Select 'From' Account"
             cb2_placeholder = "Select 'To' Account"
         else:
-            to_view = f"{t_code}_to_view"
-            from_view = f"{t_code}_from_view"
+            from_view = f"{t_code}_to_view"
+            to_view = f"{t_code}_from_view"
             cb1_placeholder = "Select 'To' Account"
             cb2_placeholder = "Select 'From' Account"
 
-        to_accounts = self.fetch_data_from_view(to_view)
         from_accounts = self.fetch_data_from_view(from_view)
+        to_accounts = self.fetch_data_from_view(to_view)
 
         print(f"load_combo_box_data: Loaded combo box data for t_code: {t_code}")
-        self.data_entry_widget.update_combo_boxes(to_accounts, from_accounts, cb1_placeholder, cb2_placeholder)
+        self.data_entry_widget.update_combo_boxes(from_accounts, to_accounts, cb1_placeholder, cb2_placeholder)
 
     def process_function_button(self, t_code):
         print(f"process_function_button: Received signal to process function button: {t_code}")
